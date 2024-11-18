@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/my_controller.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/controller_pkg.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/my_controller/cmake" TYPE FILE FILES
-    "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/my_controllerConfig.cmake"
-    "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/my_controllerConfig-version.cmake"
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/controller_pkg/cmake" TYPE FILE FILES
+    "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/controller_pkgConfig.cmake"
+    "/home/fizzer/ros_ws/build/controller_pkg/catkin_generated/installspace/controller_pkgConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/my_controller" TYPE FILE FILES "/home/fizzer/ros_ws/src/controller_pkg/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/controller_pkg" TYPE FILE FILES "/home/fizzer/ros_ws/src/controller_pkg/package.xml")
 endif()
 
