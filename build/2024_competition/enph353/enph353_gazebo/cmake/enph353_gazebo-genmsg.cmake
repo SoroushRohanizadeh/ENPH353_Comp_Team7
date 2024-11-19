@@ -24,7 +24,11 @@ add_custom_target(_enph353_gazebo_generate_messages_check_deps_${_filename}
 
 get_filename_component(_filename "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv" NAME_WE)
 add_custom_target(_enph353_gazebo_generate_messages_check_deps_${_filename}
+<<<<<<< HEAD
   COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "enph353_gazebo" "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv" "sensor_msgs/Image:std_msgs/Header"
+=======
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "enph353_gazebo" "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv" "std_msgs/Header:sensor_msgs/Image"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
 )
 
 #
@@ -44,7 +48,11 @@ _generate_srv_cpp(enph353_gazebo
 _generate_srv_cpp(enph353_gazebo
   "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv"
   "${MSG_I_FLAGS}"
+<<<<<<< HEAD
   "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
+=======
+  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/enph353_gazebo
 )
 
@@ -85,7 +93,11 @@ _generate_srv_eus(enph353_gazebo
 _generate_srv_eus(enph353_gazebo
   "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv"
   "${MSG_I_FLAGS}"
+<<<<<<< HEAD
   "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
+=======
+  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/enph353_gazebo
 )
 
@@ -126,7 +138,11 @@ _generate_srv_lisp(enph353_gazebo
 _generate_srv_lisp(enph353_gazebo
   "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv"
   "${MSG_I_FLAGS}"
+<<<<<<< HEAD
   "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
+=======
+  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/enph353_gazebo
 )
 
@@ -167,7 +183,11 @@ _generate_srv_nodejs(enph353_gazebo
 _generate_srv_nodejs(enph353_gazebo
   "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv"
   "${MSG_I_FLAGS}"
+<<<<<<< HEAD
   "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
+=======
+  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/enph353_gazebo
 )
 
@@ -208,7 +228,11 @@ _generate_srv_py(enph353_gazebo
 _generate_srv_py(enph353_gazebo
   "/home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv"
   "${MSG_I_FLAGS}"
+<<<<<<< HEAD
   "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
+=======
+  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/enph353_gazebo
 )
 

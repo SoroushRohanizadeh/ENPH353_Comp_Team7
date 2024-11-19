@@ -66,8 +66,13 @@ include 2024_competition/enph353/enph353_gazebo/CMakeFiles/enph353_gazebo_genera
 
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/lib/gencpp/gen_cpp.py
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv
+<<<<<<< HEAD
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/std_msgs/msg/Header.msg
+=======
+/home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/std_msgs/msg/Header.msg
+/home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/gencpp/msg.h.template
 /home/fizzer/ros_ws/devel/include/enph353_gazebo/SubmitPlate.h: /opt/ros/noetic/share/gencpp/srv.h.template
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/fizzer/ros_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating C++ code from enph353_gazebo/SubmitPlate.srv"

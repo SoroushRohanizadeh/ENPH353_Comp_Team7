@@ -64,8 +64,13 @@ include 2024_competition/enph353/enph353_gazebo/CMakeFiles/enph353_gazebo_genera
 
 /home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /opt/ros/noetic/lib/gennodejs/gen_nodejs.py
 /home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv
+<<<<<<< HEAD
 /home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
 /home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /opt/ros/noetic/share/std_msgs/msg/Header.msg
+=======
+/home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /opt/ros/noetic/share/std_msgs/msg/Header.msg
+/home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv/SubmitPlate.js: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
+>>>>>>> 14026634d90c8bf8a33b510efd7ab8f2fe262b73
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/fizzer/ros_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating Javascript code from enph353_gazebo/SubmitPlate.srv"
 	cd /home/fizzer/ros_ws/build/2024_competition/enph353/enph353_gazebo && ../../../catkin_generated/env_cached.sh /usr/bin/python3 /opt/ros/noetic/share/gennodejs/cmake/../../../lib/gennodejs/gen_nodejs.py /home/fizzer/ros_ws/src/2024_competition/enph353/enph353_gazebo/srv/SubmitPlate.srv -Istd_msgs:/opt/ros/noetic/share/std_msgs/cmake/../msg -Isensor_msgs:/opt/ros/noetic/share/sensor_msgs/cmake/../msg -Igeometry_msgs:/opt/ros/noetic/share/geometry_msgs/cmake/../msg -p enph353_gazebo -o /home/fizzer/ros_ws/devel/share/gennodejs/ros/enph353_gazebo/srv
 
