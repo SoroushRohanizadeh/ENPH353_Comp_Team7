@@ -44,10 +44,6 @@ class ControlNode:
     
 
     def run(self):
-
-        self.string = "7, 7, 0, hello"
-        self.score_tracker.publish(self.string)
-        print("pushed" + self.string)
         while not rospy.is_shutdown():
             self.pub1.publish(self.move)
             self.rate.sleep()
