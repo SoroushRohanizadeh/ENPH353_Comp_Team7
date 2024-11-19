@@ -8,6 +8,7 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 
+
 class ControlNode:
 
     def __init__(self):
@@ -15,6 +16,7 @@ class ControlNode:
 
         self.bridge = CvBridge()
         self.move = Twist()
+        self.string = String()
 
         self.pub1 = rospy.Publisher('B1/cmd_vel', Twist, queue_size=1)
         self.pub2 = rospy.Publisher('score_tracker', String, queue_size=1)
@@ -42,6 +44,10 @@ class ControlNode:
     
 
     def run(self):
+
+        self.string = "7, 7, 0, hello"
+        self.score_tracker.publish(self.string)
+        print("pushed" + self.string)
         while not rospy.is_shutdown():
             self.pub1.publish(self.move)
             self.rate.sleep()
