@@ -25,13 +25,14 @@ class ControlNode:
         self.score_tracker = rospy.Publisher('/score_tracker', String, queue_size = 1)
         self.cam = rospy.Subscriber('/B1/rrbot/camera1/image_raw', Image, self.cameraCallback)
         self.rate = rospy.Rate(1)
+
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
 
     def run(self):
 
-        while not rospy.Time.now().to_sec() > 0:
-            rospy.sleep(0.1)
+        # while not rospy.Time.now().to_sec() > 0:
+        #     rospy.sleep(0.1)
 
         # rospy.sleep(1.0)
         # self.startTimer()

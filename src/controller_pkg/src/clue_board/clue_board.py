@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 def detectClueBoard(img):
     img = preProcess(img)
@@ -30,4 +31,6 @@ def preProcess(img):
     '''
     reduce dimensionality of img
     '''
-    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, binarized = cv2.threshold(img, 15,255,cv2.THRESH_BINARY)
+    return binarized
