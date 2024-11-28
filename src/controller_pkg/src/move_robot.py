@@ -45,7 +45,12 @@ class ControlNode:
 
     def cameraCallback(self, img):
         self.setMotion(lf.line_follow(img))
-        msg = cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        ret, num, msg = cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if (ret):
+            self.publishClue(num, msg)
+
+    def publishClue(self, num, msg):
+        self.score_tracker.publish("Team7,password," + num + "," + msg)
 
     def startTimer(self):
         self.score_tracker.publish("Team7,password,0,NA")
