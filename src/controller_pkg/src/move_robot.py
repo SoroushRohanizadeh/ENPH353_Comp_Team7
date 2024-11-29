@@ -51,7 +51,8 @@ class ControlNode:
             self.rate.sleep()
 
     def cameraCallback(self, img):
-        x, yaw = lf.line_follow(img)
+        x, yaw = lf.line_follow(self, img)
+        lf.line_img_filter(self, img)
         self.setMotion(x, yaw)
 
         if DEBUG:
