@@ -15,7 +15,7 @@ def line_img_filter(self, img):
 
     result = cv.bitwise_and(image, image, mask=mask)
 
-    col_val = get_target_line(self,result)
+    x_target,y_target = get_target_coord(self,result)
 
     print(col_val)
     cv.imshow('Original', image)
@@ -24,12 +24,29 @@ def line_img_filter(self, img):
     cv.destroyAllWindows()
     return result
 
-def get_target_line(self, img):
+def get_target_coord(self, img):
     
     col_list = []
     for col in range(img.shape[1]):
-        if [255,255,255] not in img[:,col]:
+        if [255,255,255] not in img[400:,col]:
             col_list.append(col)
 
-    return sum(col_list)/len(col_list)    
+    if not col_list:
+        x_target = 800
+
+    else:
+        x_target = sum(col_list)/len(col_list)
+    
+    row_list = []
+    for row in range(400, img.shape[0]):
+        if [255,255,255] not in img[row,:]:
+            row_list.append(row)
+
+    if not row_list:
+        y_target = 400
+
+    else:
+        y_target = sum(row_list)/len(row_list)
+
+    return x_target,y_target  
 
