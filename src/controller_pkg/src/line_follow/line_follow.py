@@ -55,7 +55,7 @@ def get_target_coord(img):
     return x_target,y_target  
 
 Kp_linear = 0.5
-Kp_angular = 1.0 
+Kp_angular = 0.3 
 max_linear = 1.0  
 max_angular = 4.0 
 
@@ -63,12 +63,12 @@ def compute_twist(x_target, y_target):
     
     x_length = 400 - x_target
     y_length = 800 - y_target
-    
+    # print("X,Y",x_length,y_length)
     distance = math.sqrt(x_length**2 + y_length**2)
-    angle = math.atan2(x_target, y_target)
-    
+    angle = math.atan2(x_length, y_length)
+    # print(distance,angle)
     x_vel = min(Kp_linear * distance, max_linear) 
 
     ang_vel = max(min(Kp_angular * angle, max_angular), -max_angular)
-    print(x_vel,ang_vel)
+    # print(x_vel,ang_vel)
     return x_vel, ang_vel
