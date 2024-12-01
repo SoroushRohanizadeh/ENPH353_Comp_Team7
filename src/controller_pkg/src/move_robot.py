@@ -51,7 +51,7 @@ class ControlNode:
     def cameraCallback(self, img):
         x, yaw = lf.line_follow(self, img)
         # lf.line_img_filter(self, img)
-        # x,yaw=0,0
+        x,yaw = lf.acc_comms(x,yaw)
         self.setMotion(x, yaw)
 
         if DEBUG:
