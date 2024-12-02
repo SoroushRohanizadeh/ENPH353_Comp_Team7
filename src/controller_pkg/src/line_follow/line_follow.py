@@ -63,7 +63,7 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.003
+Kp_linear = 0.001
 Kp_angular = 1.0
 max_linear = 5.0  
 max_angular = 4.0 
@@ -126,6 +126,7 @@ def task_save_andy(self, img):
     #detect when andy crosses
     
     find_andy(img,fgbg)
+    return command
 
     #wait
 
@@ -135,7 +136,7 @@ def center_road(self, img):
 
     angle = get_angle(img)
     
-    if abs(angle) > 1:
+    if abs(angle) > 2:
         return 0, -0.1*angle
     
     else:
@@ -176,7 +177,7 @@ def find_andy(img,fgbg):
     contours, _ = cv.findContours(fgmask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        if cv.contourArea(contour) > 1600:  # Filter out small contours
+        if cv.contourArea(contour) > 1600: 
             x, y, w, h = cv.boundingRect(contour)
             cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
     cv.imshow('Motion Detection', img)
