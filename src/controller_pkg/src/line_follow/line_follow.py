@@ -4,12 +4,17 @@ import rospy
 import math
 from collections import deque
 
+trip = False
+
 def line_follow(self, img):
 
-    image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
+    global trip
 
-    if detect_crosswalk(image):
-        return 0,0
+    image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
+    
+    if detect_crosswalk(image) or trip:
+        trip = True
+        return task_save_andy(self,image)
 
     filtered = line_img_filter(image)
 
@@ -58,7 +63,7 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.001
+Kp_linear = 0.003
 Kp_angular = 1.0
 max_linear = 5.0  
 max_angular = 4.0 
@@ -74,7 +79,7 @@ def compute_twist(x_target, y_target):
     x_vel = min(Kp_linear * distance, max_linear) 
 
     ang_vel = max(min(Kp_angular * angle, max_angular), -max_angular)
-    print(x_vel,ang_vel)
+    # print(x_vel,ang_vel)
     return x_vel, ang_vel
 
 history = deque(maxlen=5)
@@ -108,3 +113,54 @@ def detect_crosswalk(img):
         return True
 
     return False
+
+def task_save_andy(self, img):
+
+    return center_road(self,img)
+
+    #detect when andy crosses
+
+    #wait
+
+    #floor it
+
+def center_road(self, img):
+
+    angle = get_angle(img)
+    
+    if abs(angle) > 1:
+        return 0, -0.1*angle
+    
+    else:
+        return 0,0
+
+
+def get_angle(img):
+
+    mask =  mask = cv.inRange(img, lower_red, upper_red)
+
+    result = cv.bitwise_and(img, img, mask=mask)
+
+    edges = cv.Canny(result,50,150)
+    lines = cv.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=50, maxLineGap=10)
+
+    angles = []
+
+    if lines is not None:
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                angle = math.atan2(y2 - y1, x2 - x1) * (180 / np.pi)
+                angles.append(angle)
+
+    # for line in lines:
+    #     for x1, y1, x2, y2 in line:
+    #         cv.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # cv.imshow("Detected Lines", img)
+    # cv.waitKey(1)
+
+    avg_angle = np.mean(angles) if angles else 0
+
+    perp_angle = avg_angle
+    # perp_angle = (perp_angle + 180) % 360 - 180
+    print(perp_angle)
+    return perp_angle
