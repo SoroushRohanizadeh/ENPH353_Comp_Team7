@@ -42,18 +42,62 @@ def detectBoard(img):
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 1000]
     # cv2.drawContours(gray, filtered_contours, -1, 255, 3)
 
+    ret_img = img
     for cnt in filtered_contours:
-    # Check if the contour is valid (non-empty)
-        if len(cnt) > 0:
-            epsilon = 0.02 * cv2.arcLength(cnt, True)  # Adjust epsilon if necessary
-            
-            approx = cv2.approxPolyDP(cnt, epsilon, True)
-            cv2.polylines(img, [approx], isClosed = True, color=255, thickness = 3)
+        epsilon = 0.1 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
 
-    return True, gray
+        if len(approx) == 4:
+            # cv2.polylines(gray, [approx], isClosed = True, color=255, thickness = 3)
+            contour_corners = sort_corners(np.float32(approx))
+            
+
+            w, h = gray.shape
+            image_corners = np.float32([[0, 0], [w-1, 0], [w-1, h-1], [0, h-1]])
+            
+            matrix = cv2.getPerspectiveTransform(contour_corners, image_corners)
+            ret_img = cv2.warpPerspective(gray, matrix, (w, h))
+
+    return ret_img != img, ret_img
 
 def preProcess(img):
     '''
     reduce dimensionality of img
     '''
     return img
+
+def sort_corners(corners):
+    x0, y0 = corners[0][0]
+    x1, y1 = corners[1][0]
+    x2, y2 = corners[2][0]
+    x3, y3 = corners[3][0]
+
+    # Find the top-left, top-right, bottom-left, bottom-right by comparing x and y coordinates
+    if x0 < x1 and y0 < y1:
+        top_left = corners[0]
+        top_right = corners[1]
+    elif x0 > x1 and y0 < y1:
+        top_left = corners[1]
+        top_right = corners[0]
+    elif x0 < x1 and y0 > y1:
+        bottom_left = corners[0]
+        bottom_right = corners[1]
+    else:
+        bottom_left = corners[1]
+        bottom_right = corners[0]
+
+    if x2 < x3 and y2 < y3:
+        bottom_left = corners[2]
+        bottom_right = corners[3]
+    elif x2 > x3 and y2 < y3:
+        bottom_left = corners[3]
+        bottom_right = corners[2]
+    elif x2 < x3 and y2 > y3:
+        top_left = corners[2]
+        top_right = corners[3]
+    else:
+        top_left = corners[3]
+        top_right = corners[2]
+
+    corners = [top_left, top_right, bottom_right, bottom_left]
+    return np.float32(corners)
