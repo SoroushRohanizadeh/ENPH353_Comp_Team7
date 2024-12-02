@@ -114,11 +114,18 @@ def detect_crosswalk(img):
 
     return False
 
+fgbg = cv.createBackgroundSubtractorMOG2()
+
 def task_save_andy(self, img):
 
-    return center_road(self,img)
+    command = center_road(self,img)
+
+    if command != (0,0):
+        return command
 
     #detect when andy crosses
+    
+    find_andy(img,fgbg)
 
     #wait
 
@@ -158,9 +165,19 @@ def get_angle(img):
     # cv.imshow("Detected Lines", img)
     # cv.waitKey(1)
 
-    avg_angle = np.mean(angles) if angles else 0
+    return np.mean(angles) if angles else 0
 
-    perp_angle = avg_angle
-    # perp_angle = (perp_angle + 180) % 360 - 180
-    print(perp_angle)
-    return perp_angle
+
+def find_andy(img,fgbg):
+
+    fgmask = fgbg.apply(img)
+
+    # Find contours in the foreground mask
+    contours, _ = cv.findContours(fgmask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        if cv.contourArea(contour) > 1600:  # Filter out small contours
+            x, y, w, h = cv.boundingRect(contour)
+            cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    cv.imshow('Motion Detection', img)
+    cv.waitKey(1)
