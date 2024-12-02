@@ -5,16 +5,24 @@ import math
 from collections import deque
 
 trip = False
+passed_crosswalk = False
 
 def line_follow(self, img):
 
     global trip
+    global passed_crosswalk
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
     
-    if detect_crosswalk(image) or trip:
+    if not passed_crosswalk and (detect_crosswalk(image) or trip):
         trip = True
-        return task_save_andy(self,image)
+        command = task_save_andy(self,image)
+        if trip:
+            return command
+        else:
+            # rospy.sleep(1)
+            passed_crosswalk = True
+            return command
 
     filtered = line_img_filter(image)
 
@@ -63,8 +71,8 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.001
-Kp_angular = 1.0
+Kp_linear = 0.002
+Kp_angular = 2.0
 max_linear = 5.0  
 max_angular = 4.0 
 
@@ -115,22 +123,42 @@ def detect_crosswalk(img):
     return False
 
 fgbg = cv.createBackgroundSubtractorMOG2()
+last_10 = deque(maxlen=10)
+floor_it = False
+last_x = -2
 
 def task_save_andy(self, img):
+
+    global floor_it
+    global trip
+    global last_x
 
     command = center_road(self,img)
 
     if command != (0,0):
         return command
 
-    #detect when andy crosses
-    
-    find_andy(img,fgbg)
+    last_10.append(find_andy(img,fgbg))
+
+
+    if floor_it:
+        if last_10[0][1] != -1:
+            last_x = last_10[0][1]
+        for i in range(3):
+            if last_10[i][0] or last_x < 300:
+                return command
+        
+        trip = False
+        print("go")
+        return (50.0,0)
+
+
+    for elem in last_10:
+        if elem[0] or len(last_10)!=10:
+            return command
+        
+    floor_it = True
     return command
-
-    #wait
-
-    #floor it
 
 def center_road(self, img):
 
@@ -173,12 +201,16 @@ def find_andy(img,fgbg):
 
     fgmask = fgbg.apply(img)
 
-    # Find contours in the foreground mask
     contours, _ = cv.findContours(fgmask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
         if cv.contourArea(contour) > 1600: 
             x, y, w, h = cv.boundingRect(contour)
-            cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    cv.imshow('Motion Detection', img)
-    cv.waitKey(1)
+            if y > 250 and y < 400:
+                cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                cv.imshow('Motion Detection', img)
+                cv.waitKey(1)
+                return True, x
+        # cv.imshow('Motion Detection', img)
+        # cv.waitKey(1)   
+    return False, -1
