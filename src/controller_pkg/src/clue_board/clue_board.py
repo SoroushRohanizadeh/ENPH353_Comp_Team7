@@ -1,8 +1,11 @@
 import cv2
 import numpy as np
+from collections import Counter
 
 BORDER_THRESHOLD = 15
 LETTER_THRESHOLD = 70
+LETTER_HEIGHT_TOLERANCE = 3
+MIN_LETTER_HEIGHT = 50
 
 def detectClueBoard(img):
     detected, transformed_img = detectBoard(img)
@@ -40,12 +43,25 @@ def highlightLetters(img):
 
     contours = sorted(contours, key = cv2.contourArea, reverse = True)
     contours = contours[2:]
-
     # cv2.drawContours(img, contours, -1, 255, 3)
+
+    heights = []
+    for contour in contours:
+        h = cv2.boundingRect(contour)[3]
+        if (h > MIN_LETTER_HEIGHT):
+            heights.append(h)
+
+    counter = Counter(heights)
+    letter_height, _ = counter.most_common(1)[0] # extract most common height value 
 
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
+        if (np.abs(h - letter_height) < LETTER_HEIGHT_TOLERANCE):
+            cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
+
+    # for contour in contours:
+    #     x, y, w, h = cv2.boundingRect(contour)
+    #     cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
 
     return img
 
@@ -53,6 +69,8 @@ def detectBoard(img):
     '''
     given a raw image, determine if a clue board can be found. If found, 
         perform a perspective transform to center the image on the clueboard
+    @return True if board is found
+    @return the transformed image
     '''
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, binarized = cv2.threshold(gray, BORDER_THRESHOLD,255,cv2.THRESH_BINARY)
@@ -85,7 +103,15 @@ def detectBoard(img):
             matrix = cv2.getPerspectiveTransform(contour_corners, image_corners)
             ret_img = cv2.warpPerspective(gray, matrix, (w, h))
 
-    return ret_img != img, ret_img
+    if (ret_img.all() == img.all()): return False, img
+    return containsIcon(ret_img), ret_img
+
+def containsIcon(img):
+    '''
+    @return True if the Fizz Detective Icon can be found in img
+    '''
+    # TODO implement
+    return True
 
 def sort_corners(corners):
     corners = [point[0] for point in corners]
