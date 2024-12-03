@@ -28,14 +28,17 @@ class ClueBoard:
         '''
         detected, transformed_img = self.detectBoard(img)
         if not detected: return img
+
         top, bottom = self.highlightLetters(transformed_img)
-        return bottom[0]
+        self.parseBoard(transformed_img)
+        return top[0]
 
     def parseBoard(self, img):
         '''
         Parse board for message and number
         @returns board number, message
         '''
+        top, bottom = self.highlightLetters(img)
         return 0, str()
 
     def highlightLetters(self, img):
@@ -73,18 +76,25 @@ class ClueBoard:
             x, y, w, h = cv2.boundingRect(contour)
             if (np.abs(h - letter_height) < LETTER_HEIGHT_TOLERANCE):
                 if (y > img.shape[0] / 2):
-                    bottom_letters.append(img[y - LETTER_BORDER_THICKNESS 
+                    bottom_letters.append(dilated[y - LETTER_BORDER_THICKNESS 
                                               : y + h + LETTER_BORDER_THICKNESS, 
                                               x - LETTER_BORDER_THICKNESS 
                                               : x + w + LETTER_BORDER_THICKNESS])
                     # cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
                 else:
-                    top_letters.append(img[y - LETTER_BORDER_THICKNESS 
+                    top_letters.append(dilated[y - LETTER_BORDER_THICKNESS 
                                               : y + h + LETTER_BORDER_THICKNESS, 
                                               x - LETTER_BORDER_THICKNESS 
                                               : x + w + LETTER_BORDER_THICKNESS])
                     # cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
+        for letter in top_letters:
+            kernel = np.ones((4,4))
+            letter = cv2.dilate(letter, kernel, iterations = 1)
+
+        for letter in bottom_letters:
+            kernel = np.ones((4,4))
+            letter = cv2.dilate(letter, kernel, iterations = 1)
         # for contour in contours:
         #     x, y, w, h = cv2.boundingRect(contour)
         #     cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
