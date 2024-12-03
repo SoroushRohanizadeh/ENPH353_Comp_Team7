@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+BORDER_THRESHOLD = 15
+LETTER_THRESHOLD = 70
+
 def detectClueBoard(img):
     detected, transformed_img = detectBoard(img)
     if not detected:
@@ -12,7 +15,9 @@ def detectClueBoard_Debug(img):
     used only during development
     '''
     detected, transformed_img = detectBoard(img)
-    return transformed_img
+    if not detected: return img
+    letter_img = highlightLetters(transformed_img)
+    return letter_img
 
 def parseBoard(img):
     '''
@@ -21,13 +26,36 @@ def parseBoard(img):
     '''
     return 0, str()
 
+def highlightLetters(img):
+    '''
+    Identify and highlight the letters in the image
+    '''
+    ret, binarized = cv2.threshold(img, LETTER_THRESHOLD,255,cv2.THRESH_BINARY)
+
+    dilationKernel = np.ones((2,2))
+    dilated = cv2.dilate(binarized, dilationKernel, iterations = 1)
+
+    inverted = cv2.bitwise_not(dilated)
+    contours, _ = cv2.findContours(inverted, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+    contours = sorted(contours, key = cv2.contourArea, reverse = True)
+    contours = contours[2:]
+
+    # cv2.drawContours(img, contours, -1, 255, 3)
+
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
+
+    return img
+
 def detectBoard(img):
     '''
-    Look for a clue board in img
-    @return True if board detected
+    given a raw image, determine if a clue board can be found. If found, 
+        perform a perspective transform to center the image on the clueboard
     '''
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, binarized = cv2.threshold(gray, 15,255,cv2.THRESH_BINARY)
+    ret, binarized = cv2.threshold(gray, BORDER_THRESHOLD,255,cv2.THRESH_BINARY)
 
     erosionKernel = np.ones((3,3))
     eroded = cv2.erode(binarized, erosionKernel, iterations = 1)
@@ -37,7 +65,7 @@ def detectBoard(img):
 
     inverted = cv2.bitwise_not(dilated)
     contours, _ = cv2.findContours(inverted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 1000]
+    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 500]
     # cv2.drawContours(gray, filtered_contours, -1, 255, 3)
 
     ret_img = img
