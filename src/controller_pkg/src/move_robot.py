@@ -6,7 +6,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from cv_bridge import CvBridge
 
-import clue_board.clue_board as cb
+from clue_board.clue_board import ClueBoard
 import line_follow.line_follow as lf
 import cv2
 
@@ -20,11 +20,12 @@ class ControlNode:
         self.bridge = CvBridge()
         self.moveCommand = Twist()
         self.string = String()
+        self.cb = ClueBoard()
 
         self.cmd_vel = rospy.Publisher('B1/cmd_vel', Twist, queue_size = 1)
         self.score_tracker = rospy.Publisher('/score_tracker', String, queue_size = 1)
         self.cam = rospy.Subscriber('/B1/rrbot/camera1/image_raw', Image, self.cameraCallback)
-        self.rate = rospy.Rate(1)
+        self.rate = rospy.Rate(100)
 
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
@@ -54,10 +55,10 @@ class ControlNode:
         self.setMotion(x, yaw)
 
         if DEBUG:
-            img = cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+            img = self.cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
             self.debug.publish(self.bridge.cv2_to_imgmsg(img))
         else:
-            ret, num, msg = cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+            ret, num, msg = self.cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
             if (ret):
                 self.publishClue(num, msg)
 
