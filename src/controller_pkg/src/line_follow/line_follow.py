@@ -32,15 +32,18 @@ def line_follow(self, img):
 
     return compute_twist(x_target,y_target)
 
-lower_white = np.array([240,240,240])
-upper_white = np.array([255,255,255])
+lower_white = 210
+upper_white = 255
 
 lower_green = np.array([60,130,20])
 upper_green = np.array([80,150,40])
 
 def line_img_filter(img):
 
-    mask = cv.inRange(img, lower_white, upper_white)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+    blurred = cv.GaussianBlur(gray, (5, 5), 0)
+    mask = cv.inRange(blurred, lower_white, upper_white)
     #mask2 = cv.inRange(img, lower_green, upper_green)
 
     # combined = cv.bitwise_or(mask1,mask2)
@@ -56,7 +59,7 @@ def get_target_coord(img):
     
     col_list = []
     for col in range(img.shape[1]):
-        if [255,255,255] not in img[400:,col]:
+        if 255 not in img[400:,col]:
             col_list.append(col)
 
     if not col_list:
@@ -67,7 +70,7 @@ def get_target_coord(img):
     
     row_list = []
     for row in range(400, img.shape[0]):
-        if [255,255,255] not in img[row,:]:
+        if 255 not in img[row,:]:
             row_list.append(row)
 
     if not row_list:
@@ -78,8 +81,8 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.0015
-Kp_angular = 1.5
+Kp_linear = 0.002
+Kp_angular = 1.75
 max_linear = 3.0  
 max_angular = 3.0 
 
@@ -223,7 +226,44 @@ def find_andy(img,fgbg):
     return False, -1
 
 def line_follow_leaves(self,img):
-    return
+
+    image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
+
+    filtered = line_img_filter_leaves(image)
+
+    x_target, y_target = get_target_coord(filtered)
+
+    comm = compute_twist(x_target,y_target)
+    return comm
+
+lower_leaf = 180
+upper_leaf = 255
+
+def line_img_filter_leaves(img):
+
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    gray[:400,:] = 0
+    blurred = cv.GaussianBlur(gray, (11, 11), 0)
+    
+    # kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+    # cleaned = cv.morphologyEx(blurred, cv.MORPH_CLOSE, kernel)
+    # cleaned = cv.morphologyEx(cleaned, cv.MORPH_OPEN, kernel)
+    
+    mask = cv.inRange(blurred, lower_leaf, upper_leaf)
+
+    contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    filtered_mask = np.zeros_like(mask)
+    for contour in contours:
+        area = cv.contourArea(contour)
+        if area > 300:
+            cv.drawContours(filtered_mask, [contour], -1, 255, -1)
+
+    result = cv.bitwise_and(img, img, mask=filtered_mask)
+    result[filtered_mask>0] = 255
+    cv.imshow("Detected Line", result)
+    cv.waitKey(1)
+    return result
+    
 
 lower_blue = np.array([80,0,0])
 upper_blue = np.array([120,20,20])
