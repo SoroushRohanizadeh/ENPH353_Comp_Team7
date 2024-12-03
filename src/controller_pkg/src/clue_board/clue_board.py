@@ -11,6 +11,7 @@ TRANSFORMED_CB_HEIGHT = 800
 LETTER_COLOR_THRESHOLD = 70
 LETTER_HEIGHT_TOLERANCE = 5
 MIN_LETTER_HEIGHT = 50
+MIN_LETTER_WIDTH = 40
 LETTER_BORDER_THICKNESS = 3
 
 FIZZ_ICON_PATH = "clue_board/reference_images/fizz_detective.png"
@@ -58,7 +59,7 @@ class ClueBoard:
         # reference = cv2.imread(LETTER_IMG_PATH + "I.png", cv2.IMREAD_GRAYSCALE)
         # _, reference = cv2.threshold(reference, LETTER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
         # print(self.imgDifference(top[0], reference))
-        return bottom[1]
+        return top[4]
 
     def imgDifference(self, img1, img2):
         height = max(img1.shape[0], img2.shape[0])
@@ -97,38 +98,34 @@ class ClueBoard:
         cv2.fillPoly(inverted, [np.int32(self.icon_corners)], color = 0)
 
         contours, _ = cv2.findContours(inverted, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-
-        contours = sorted(contours, key = cv2.contourArea, reverse = True)
-        contours = contours[2:]
         # cv2.drawContours(img, contours, -1, 255, 3)
 
-        heights = []
-        for contour in contours:
-            h = cv2.boundingRect(contour)[3]
-            if (h > MIN_LETTER_HEIGHT):
-                heights.append(h)
-        contours = sorted(contours, key = lambda contour: cv2.boundingRect(contour)[0]) #sort by x location
+        contours = sorted(contours, key = cv2.contourArea, reverse = True)
+        contours = contours[2:] # remove the border contours
 
-        counter = Counter(heights)
-        letter_height, _ = counter.most_common(1)[0] # extract most common height value 
+        # filtering out any small artifacts:
+        contours = [cnt for cnt in contours if cv2.boundingRect(cnt)[3] > MIN_LETTER_HEIGHT]
+
+        #filtering out any internal contours in letters like Q, O, R, etc.
+        contours = [cnt for cnt in contours if cv2.boundingRect(cnt)[2] > MIN_LETTER_WIDTH]
+        contours = sorted(contours, key = lambda contour: cv2.boundingRect(contour)[0]) #sort by x location
 
         top_letters = []
         bottom_letters = []
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            if (np.abs(h - letter_height) < LETTER_HEIGHT_TOLERANCE):
-                letter = dilated[y - LETTER_BORDER_THICKNESS 
-                            : y + h + LETTER_BORDER_THICKNESS, 
-                            x - LETTER_BORDER_THICKNESS 
-                            : x + w + LETTER_BORDER_THICKNESS]
-                letter = self.smoothLetter(letter)
+            letter = dilated[y - LETTER_BORDER_THICKNESS 
+                        : y + h + LETTER_BORDER_THICKNESS, 
+                        x - LETTER_BORDER_THICKNESS 
+                        : x + w + LETTER_BORDER_THICKNESS]
+            letter = self.smoothLetter(letter)
 
-                if (y > img.shape[0] / 2):
-                    bottom_letters.append(letter)
-                    # cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
-                else:
-                    top_letters.append(letter)
-                    # cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
+            if (y > img.shape[0] / 2):
+                bottom_letters.append(letter)
+                # cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
+            else:
+                top_letters.append(letter)
+                # cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
         return top_letters, bottom_letters
 
@@ -200,7 +197,11 @@ class ClueBoard:
 
         kp_grayframe, desc_grayframe = sift.detectAndCompute(img, None)
 
-        matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
+        try:
+            matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
+        except Exception as e:
+            return False
+        
         good_points = []
         for m, n in matches:
             if m.distance < 0.6 * n.distance:
