@@ -81,7 +81,7 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.002
+Kp_linear = 0.001 #0.002
 Kp_angular = 1.75
 max_linear = 3.0  
 max_angular = 3.0 
