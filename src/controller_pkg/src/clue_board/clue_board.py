@@ -1,16 +1,23 @@
 import cv2
 import numpy as np
 from collections import Counter
+from skimage.metrics import structural_similarity as ssim
 
 BORDER_COLOR_THRESHOLD = 15
+
+TRANSFORMED_CB_WIDTH = 800
+TRANSFORMED_CB_HEIGHT = 800
 
 LETTER_COLOR_THRESHOLD = 70
 LETTER_HEIGHT_TOLERANCE = 5
 MIN_LETTER_HEIGHT = 50
 LETTER_BORDER_THICKNESS = 3
 
-REFERENCE_PATH = "/home/fizzer/ros_ws/src/controller_pkg/src/clue_board/reference_images/fizz_detective.png"
+FIZZ_ICON_PATH = "clue_board/reference_images/fizz_detective.png"
+LETTER_IMG_PATH = "clue_board/reference_images/"
 NUM_MATCHES_FOR_HOMOGRAPHY = 8
+
+
 
 class ClueBoard:
 
@@ -29,17 +36,52 @@ class ClueBoard:
         detected, transformed_img = self.detectBoard(img)
         if not detected: return img
 
-        top, bottom = self.highlightLetters(transformed_img)
-        self.parseBoard(transformed_img)
-        return top[0]
-
+        # top, bottom = self.highlightLetters(transformed_img)
+        top = self.parseBoard(transformed_img)
+        return top
+    
     def parseBoard(self, img):
         '''
         Parse board for message and number
         @returns board number, message
         '''
         top, bottom = self.highlightLetters(img)
-        return 0, str()
+
+        top_chars = []
+        for letter in top:
+            top_chars.append(self.imgToChar(letter))
+
+        bottom_chars = []
+        for letter in bottom:
+            bottom_chars.append(self.imgToChar(letter))
+
+        # reference = cv2.imread(LETTER_IMG_PATH + "I.png", cv2.IMREAD_GRAYSCALE)
+        # _, reference = cv2.threshold(reference, LETTER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
+        # print(self.imgDifference(top[0], reference))
+        return bottom[1]
+
+    def imgDifference(self, img1, img2):
+        height = max(img1.shape[0], img2.shape[0])
+        width = max(img1.shape[1], img2.shape[1])
+
+        img1 = self.padImg(img1, height, width)
+        img2 = self.padImg(img2, height, width)
+
+        # return np.mean((img1 - img2) ** 2)
+        return ssim(img1, img2, full = True)[0]
+
+    def padImg(self, img, height, width):
+        top = (height - img.shape[0]) // 2
+        bottom = height - img.shape[0] - top
+        left = (width - img.shape[1]) // 2
+        right = width - img.shape[1] - left 
+        return cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, 255)
+
+    def imgToChar(self, letter):
+        '''
+        Return the char that is most likely present in the letter image
+        '''
+        return ''
 
     def highlightLetters(self, img):
         '''
@@ -60,12 +102,12 @@ class ClueBoard:
         contours = contours[2:]
         # cv2.drawContours(img, contours, -1, 255, 3)
 
-
         heights = []
         for contour in contours:
             h = cv2.boundingRect(contour)[3]
             if (h > MIN_LETTER_HEIGHT):
                 heights.append(h)
+        contours = sorted(contours, key = lambda contour: cv2.boundingRect(contour)[0]) #sort by x location
 
         counter = Counter(heights)
         letter_height, _ = counter.most_common(1)[0] # extract most common height value 
@@ -75,31 +117,32 @@ class ClueBoard:
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
             if (np.abs(h - letter_height) < LETTER_HEIGHT_TOLERANCE):
+                letter = dilated[y - LETTER_BORDER_THICKNESS 
+                            : y + h + LETTER_BORDER_THICKNESS, 
+                            x - LETTER_BORDER_THICKNESS 
+                            : x + w + LETTER_BORDER_THICKNESS]
+                letter = self.smoothLetter(letter)
+
                 if (y > img.shape[0] / 2):
-                    bottom_letters.append(dilated[y - LETTER_BORDER_THICKNESS 
-                                              : y + h + LETTER_BORDER_THICKNESS, 
-                                              x - LETTER_BORDER_THICKNESS 
-                                              : x + w + LETTER_BORDER_THICKNESS])
+                    bottom_letters.append(letter)
                     # cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
                 else:
-                    top_letters.append(dilated[y - LETTER_BORDER_THICKNESS 
-                                              : y + h + LETTER_BORDER_THICKNESS, 
-                                              x - LETTER_BORDER_THICKNESS 
-                                              : x + w + LETTER_BORDER_THICKNESS])
+                    top_letters.append(letter)
                     # cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
-        for letter in top_letters:
-            kernel = np.ones((4,4))
-            letter = cv2.dilate(letter, kernel, iterations = 1)
-
-        for letter in bottom_letters:
-            kernel = np.ones((4,4))
-            letter = cv2.dilate(letter, kernel, iterations = 1)
-        # for contour in contours:
-        #     x, y, w, h = cv2.boundingRect(contour)
-        #     cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
-
         return top_letters, bottom_letters
+
+    def smoothLetter(self, letter):
+        '''
+        smooth the edges on the given letter image
+        @param letter a binarized image of a letter'''
+
+        letter = cv2.GaussianBlur(letter, (3, 3), 0)
+        _, letter = cv2.threshold(letter, LETTER_COLOR_THRESHOLD, 255, cv2.THRESH_BINARY)
+
+        kernel = np.ones((2,2))
+        letter = cv2.morphologyEx(letter, cv2.MORPH_CLOSE, kernel)
+        return letter
 
     def detectBoard(self, img):
         '''
@@ -132,12 +175,13 @@ class ClueBoard:
                 # contour_corners = np.float32(approx)
                 contour_corners = self.sort_corners(approx)
 
-
-                w, h = gray.shape
-                image_corners = np.float32([[0, 0], [w-1, 0], [w-1, h-1], [0, h-1]])
+                image_corners = np.float32([[0, 0], 
+                                            [TRANSFORMED_CB_WIDTH - 1, 0], 
+                                            [TRANSFORMED_CB_WIDTH - 1, TRANSFORMED_CB_HEIGHT - 1],
+                                            [0, TRANSFORMED_CB_HEIGHT - 1]])
                 
                 matrix = cv2.getPerspectiveTransform(contour_corners, image_corners)
-                ret_img = cv2.warpPerspective(gray, matrix, (w, h))
+                ret_img = cv2.warpPerspective(gray, matrix, (TRANSFORMED_CB_WIDTH, TRANSFORMED_CB_HEIGHT))
 
         if (ret_img.all() == img.all()): return False, img
         return self.containsIcon(ret_img), ret_img
@@ -146,7 +190,7 @@ class ClueBoard:
         '''
         @return True if the Fizz Detective Icon can be found in img
         '''
-        reference = cv2.imread(REFERENCE_PATH, cv2.IMREAD_GRAYSCALE)
+        reference = cv2.imread(FIZZ_ICON_PATH, cv2.IMREAD_GRAYSCALE)
         sift = cv2.SIFT_create()
         kp_image, desc_image = sift.detectAndCompute(reference, None)
 
