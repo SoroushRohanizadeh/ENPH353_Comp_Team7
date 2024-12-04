@@ -11,19 +11,19 @@ TRANSFORMED_CB_HEIGHT = 800
 LETTER_COLOR_THRESHOLD = 70
 LETTER_HEIGHT_TOLERANCE = 5
 MIN_LETTER_HEIGHT = 50
-MIN_LETTER_WIDTH = 40
+MIN_LETTER_WIDTH = 35
 LETTER_BORDER_THICKNESS = 3
 
 FIZZ_ICON_PATH = "clue_board/reference_images/fizz_detective.png"
-LETTER_IMG_PATH = "clue_board/reference_images/"
 NUM_MATCHES_FOR_HOMOGRAPHY = 8
+
+LETTER_IMG_PATH = "clue_board/reference_images/"
+LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+           'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 
 
 class ClueBoard:
-
-    def __init__(self):
-        return
 
     def detectClueBoard(self, img):
         detected, transformed_img = self.detectBoard(img)
@@ -38,8 +38,8 @@ class ClueBoard:
         if not detected: return img
 
         # top, bottom = self.highlightLetters(transformed_img)
-        top = self.parseBoard(transformed_img)
-        return top
+        top_msg, bottom_msg = self.parseBoard(transformed_img)
+        return transformed_img
     
     def parseBoard(self, img):
         '''
@@ -59,7 +59,10 @@ class ClueBoard:
         # reference = cv2.imread(LETTER_IMG_PATH + "I.png", cv2.IMREAD_GRAYSCALE)
         # _, reference = cv2.threshold(reference, LETTER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
         # print(self.imgDifference(top[0], reference))
-        return top[4]
+        top_msg = ''.join(top_chars)
+        bottom_msg = ''.join(bottom_chars)
+        print('Top: ' + ''.join(top_chars) + " Bottom: " + ''.join(bottom_chars))
+        return top_msg, bottom_msg
 
     def imgDifference(self, img1, img2):
         height = max(img1.shape[0], img2.shape[0])
@@ -68,8 +71,8 @@ class ClueBoard:
         img1 = self.padImg(img1, height, width)
         img2 = self.padImg(img2, height, width)
 
-        # return np.mean((img1 - img2) ** 2)
-        return ssim(img1, img2, full = True)[0]
+        return np.mean((img1 - img2) ** 2)
+        # return ssim(img1, img2, full = True)[0]
 
     def padImg(self, img, height, width):
         top = (height - img.shape[0]) // 2
@@ -82,7 +85,12 @@ class ClueBoard:
         '''
         Return the char that is most likely present in the letter image
         '''
-        return ''
+        diffs = []
+        for ref_letter in LETTERS:
+            ref_img = cv2.imread(LETTER_IMG_PATH + ref_letter + ".png", cv2.IMREAD_GRAYSCALE)
+            diffs.append(self.imgDifference(letter, ref_img))
+
+        return LETTERS[diffs.index(min(diffs))] 
 
     def highlightLetters(self, img):
         '''
@@ -122,10 +130,10 @@ class ClueBoard:
 
             if (y > img.shape[0] / 2):
                 bottom_letters.append(letter)
-                # cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
+                cv2.rectangle(img, (x, y), (x + w, y + h), 255, 2)
             else:
                 top_letters.append(letter)
-                # cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
+                cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
         return top_letters, bottom_letters
 
