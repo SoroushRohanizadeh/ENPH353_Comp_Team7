@@ -8,7 +8,8 @@ BORDER_COLOR_THRESHOLD = 15
 TRANSFORMED_CB_WIDTH = 800
 TRANSFORMED_CB_HEIGHT = 800
 
-LETTER_COLOR_THRESHOLD = 70
+LETTER_COLOR_THRESHOLD_B1 = 70
+LETTER_COLOR_THRESHOLD_B3 = 100
 LETTER_HEIGHT_TOLERANCE = 5
 MIN_LETTER_HEIGHT = 50
 MIN_LETTER_WIDTH = 35
@@ -25,6 +26,10 @@ LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 
 class ClueBoard:
 
+    def __init__(self):
+        self.BOARD_3 = False
+        self.BOARD_1 = True
+
     def detectClueBoard(self, img):
         detected, transformed_img = self.detectBoard(img)
         if not detected: return False, 0, str()
@@ -40,6 +45,7 @@ class ClueBoard:
         # top, bottom = self.highlightLetters(transformed_img)
         top_msg, bottom_msg = self.parseBoard(transformed_img)
         return transformed_img
+        # return self.highlightLetters(transformed_img)
     
     def parseBoard(self, img):
         '''
@@ -87,13 +93,43 @@ class ClueBoard:
             ref_img = cv2.imread(LETTER_IMG_PATH + ref_letter + ".png", cv2.IMREAD_GRAYSCALE)
             diffs.append(self.imgDifference(letter, ref_img))
 
-        return LETTERS[diffs.index(min(diffs))] 
+        guess = LETTERS[diffs.index(min(diffs))]
+        if guess == "G" or guess == "C":
+            return self.cOrG(letter)
+        return guess
+
+    def cOrG(self, letter):
+        cropped = self.bottomRight(letter)
+
+        g = cv2.imread(LETTER_IMG_PATH + "G.png", cv2.IMREAD_GRAYSCALE)
+        g = self.bottomRight(g)
+
+        c = cv2.imread(LETTER_IMG_PATH + "C.png", cv2.IMREAD_GRAYSCALE)
+        c = self.bottomRight(c)
+
+        g_diff = self.imgDifference(g, cropped)
+        c_diff = self.imgDifference(c, cropped)
+
+        if (c_diff > g_diff):
+            return "G"
+        else:
+            return "C"
+
+    def bottomRight(self, letter):
+        height, width = letter.shape[:2]
+
+        crop_height = height // 2
+        crop_width = width // 2
+        return letter[height - crop_height:height, width - crop_width:width]
 
     def highlightLetters(self, img):
         '''
         Identify and highlight the letters in the image
         '''
-        ret, binarized = cv2.threshold(img, LETTER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
+        if (self.BOARD_3):
+            ret, binarized = cv2.threshold(img, LETTER_COLOR_THRESHOLD_B3,255,cv2.THRESH_BINARY)
+        elif (self.BOARD_1):
+            ret, binarized = cv2.threshold(img, LETTER_COLOR_THRESHOLD_B1,255,cv2.THRESH_BINARY) 
 
         dilationKernel = np.ones((2,2))
         dilated = cv2.dilate(binarized, dilationKernel, iterations = 1)
@@ -103,10 +139,13 @@ class ClueBoard:
         cv2.fillPoly(inverted, [np.int32(self.icon_corners)], color = 0)
 
         contours, _ = cv2.findContours(inverted, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-        # cv2.drawContours(img, contours, -1, 255, 3)
+        
 
         contours = sorted(contours, key = cv2.contourArea, reverse = True)
-        contours = contours[2:] # remove the border contours
+
+        if (self.BOARD_1):
+            contours = contours[2:] # remove the border contours
+        # cv2.drawContours(img, contours, -1, 255, 3)
         contours = [cnt for cnt in contours if cv2.boundingRect(cnt)[3] > MIN_LETTER_HEIGHT]
         contours = self.filterInternalContours(contours)
 
@@ -141,7 +180,6 @@ class ClueBoard:
             for j, box2 in enumerate(bounding_boxes):
                 if i != j:
                     x2, y2, w2, h2 = box2
-                    # Check if box1 is inside box2
                     if x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2):
                         inside = True
                         break
@@ -156,7 +194,10 @@ class ClueBoard:
         @param letter a binarized image of a letter'''
 
         letter = cv2.GaussianBlur(letter, (3, 3), 0)
-        _, letter = cv2.threshold(letter, LETTER_COLOR_THRESHOLD, 255, cv2.THRESH_BINARY)
+        if (self.BOARD_3):
+            _, letter = cv2.threshold(letter, LETTER_COLOR_THRESHOLD_B3, 255, cv2.THRESH_BINARY)
+        elif (self.BOARD_1):
+            _, letter = cv2.threshold(letter, LETTER_COLOR_THRESHOLD_B1, 255, cv2.THRESH_BINARY)
 
         kernel = np.ones((2,2))
         letter = cv2.morphologyEx(letter, cv2.MORPH_CLOSE, kernel)
@@ -169,12 +210,14 @@ class ClueBoard:
         @return True if board is found
         @return the transformed image
         '''
-        # lower_blue = (150, 0, 0)
-        # upper_blue = (255, 100, 100)
-        # binarized = cv2.inRange(img, lower_blue, upper_blue)
-
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        ret, binarized = cv2.threshold(gray, BORDER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
+
+        if (self.BOARD_3):
+            lower_blue = (190, 90, 90)
+            upper_blue = (210, 110, 110)
+            binarized = cv2.bitwise_not(cv2.inRange(img, lower_blue, upper_blue))
+        elif (self.BOARD_1):
+            ret, binarized = cv2.threshold(gray, BORDER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
 
         erosionKernel = np.ones((3,3))
         eroded = cv2.erode(binarized, erosionKernel, iterations = 1)
@@ -183,6 +226,7 @@ class ClueBoard:
         dilated = cv2.dilate(eroded, dilationKernel, iterations = 3)
 
         inverted = cv2.bitwise_not(dilated)
+        
         contours, _ = cv2.findContours(inverted, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
         filtered_contours = contours[1:]
         # cv2.drawContours(gray, filtered_contours, -1, 255, 3)
