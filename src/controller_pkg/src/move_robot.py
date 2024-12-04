@@ -45,6 +45,7 @@ class ControlNode:
         self.upper_blue = upper_blue1
 
         self.current_messages = deque(maxlen=MAX_LEN)
+        self.override = False
 
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
@@ -68,10 +69,12 @@ class ControlNode:
             "CB_7": self.cb_7_state,
         }
         self.current_board_num = 1
+        rospy.sleep(1)
+        self.publishClue(0,"NA")
 
     def run(self):
 
-        self.startTimer()
+        
         # while not rospy.Time.now().to_sec() > 0:
         #     rospy.sleep(0.1)
 
@@ -115,6 +118,7 @@ class ControlNode:
 
     def startTimer(self):
         self.score_tracker.publish("Team7,password,0,NA")
+        print("go")
 
     def stopTimer(self):
         self.score_tracker.publish("Team7,password,-1,NA")
@@ -159,7 +163,8 @@ class ControlNode:
 
         x,yaw = lf.line_follow_leaves(self,img, self.lower_blue, self.upper_blue)
         x,yaw = lf.acc_comms(x,yaw)
-        self.setMotion(x, yaw)
+        if x != -1:
+            self.setMotion(x, yaw)
 
     def save_andy_state(self,img):
 
@@ -173,10 +178,14 @@ class ControlNode:
 
     def cb_1_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        if self.override:
+            x,yaw = 0,0
+        
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(1,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
+            self.override = True
         
         if self.reliableMsg():
             self.setMotion(-0.5,-1)
@@ -184,28 +193,33 @@ class ControlNode:
             self.curr_state = "LF"
             self.publishClue(1, result)
             self.current_messages.clear()
+            self.override = False
         # else: #only because cb broken
         #     self.curr_state="LF"
 
     def cb_2_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        if self.override:
+            x, yaw = 0,0
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(2,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
+            self.override = True
         
         if self.reliableMsg():
             self.setMotion(-0.3,1.6)
             rospy.sleep(1)
             self.setMotion(2,0)
             rospy.sleep(1)
-            self.setMotion(0,-2)
-            rospy.sleep(1)
+            self.setMotion(1,-2)
+            rospy.sleep(2)
             self.curr_state = "LF"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
             self.publishClue(2, result)
             self.current_messages.clear()
+            self.override = False
         # else: #only because cb broken
         #     self.setMotion(0,1.7)
         #     rospy.sleep(1)
@@ -215,10 +229,13 @@ class ControlNode:
 
     def cb_3_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        if self.override:
+            x, yaw = 0,0
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(3,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
+            self.override = True
         
         if self.reliableMsg():
             print("yay")
@@ -230,6 +247,7 @@ class ControlNode:
             self.upper_blue = upper_blue3
             self.publishClue(3, result)
             self.current_messages.clear()
+            self.override = False
         # else: #only because cb broken
         #     self.setMotion(0,0)
         #     # rospy.sleep(0.5)
@@ -239,8 +257,8 @@ class ControlNode:
         #     self.upper_blue = upper_blue3
 
     def cb_4_state(self,img):
-        x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
-        self.setMotion(x,yaw)
+        # x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        # self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(4,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
@@ -251,6 +269,7 @@ class ControlNode:
             self.curr_state = "LF_DIRT"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
+            self.sleep(0.1)
             self.publishClue(4, result)
             self.current_messages.clear()
         # else: #only because cb broken
@@ -263,15 +282,16 @@ class ControlNode:
     def cb_5_state(self,img):
         self.lower_blue = lower_blue1
         self.upper_blue = upper_blue1
-        x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
-        self.setMotion(x,yaw)
+        # x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        self.setMotion(0,0)
         yay, extra, result = self.cb.detectClueBoard(5,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
         
         if self.reliableMsg():
+            self.setMotion(-0.2,0)
             rospy.sleep(1.0)
-            self.setMotion(1.0,-1.73)
+            self.setMotion(1.0,-1.70)
             rospy.sleep(2.8)
             self.setMotion(2.0,0)
             rospy.sleep(3.0)
@@ -283,10 +303,12 @@ class ControlNode:
     
     def cb_6_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
-        self.setMotion(x,yaw)
+        if not self.override:
+            self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
+            self.override = True
         
         if self.reliableMsg():
             self.setMotion(0,0)
@@ -297,6 +319,7 @@ class ControlNode:
             self.upper_blue = upper_blue1
             self.publishClue(6, result)
             self.current_messages.clear()
+            self.override = False
         # else: #only because cb broken
         #     self.setMotion(0,0)
         #     rospy.sleep(0.5)
@@ -306,16 +329,23 @@ class ControlNode:
         #     self.upper_blue = upper_blue1
 
     def cb_7_state(self,img):
+
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
-        self.setMotion(x,yaw)
-        yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if self.override:
+            x,yaw = 0,0
+        self.setMotion(x,yaw)    
+
+        yay, extra, result = self.cb.detectClueBoard(7,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
             self.current_messages.append(result)
+            self.override = True
         
         if self.reliableMsg():
             self.publishClue(7, result)
             self.current_messages.clear()
             self.stopTimer()
+            self.override = False
+            rospy.sleep(1000)
 
     def tp_1_state(self,img):
 
@@ -327,6 +357,10 @@ class ControlNode:
         self.setMotion(-2,0)
         rospy.sleep(1.6)
         self.setMotion(0,-1)
+        rospy.sleep(1)
+        self.setMotion(0.5,0)
+        rospy.sleep(1.3)
+        self.setMotion(0,0)
         self.lower_blue = lower_blue3
         self.upper_blue = upper_blue3
         print("CB_4")
@@ -338,7 +372,7 @@ class ControlNode:
         position_2 = [-4, -2.3, 0.1, np.pi/2, 0, np.pi, np.pi*20]
         self.respawn(position_2)
         rospy.sleep(1)
-        self.setMotion(-0.3,2.0)
+        self.setMotion(-1.0,1.0)
         rospy.sleep(1.0)
         self.setMotion(0,0)
         rospy.sleep(2.0)

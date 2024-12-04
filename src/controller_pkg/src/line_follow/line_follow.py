@@ -284,9 +284,11 @@ def line_follow_leaves(self,img, lower, upper):
         rospy.sleep(0.5)
         self.setMotion(0,2.0)
         rospy.sleep(1.5)
+        self.setMotion(0.2,0)
+        rospy.sleep(1.0)
         passed_cb5 = True
         print("CB_5")
-        return 0,0
+        return -1,0
 
     if passed_cb5 and detect_clueboard(image, lower, upper, 3000)[0]:
         print("CB_6")
@@ -363,8 +365,8 @@ def detect_clueboard(img, lower, upper, max_area):
             comm = True, contour
 
     
-    cv.imshow("boARD",gray)
-    cv.waitKey(1)  
+    # cv.imshow("boARD",gray)
+    # cv.waitKey(1)  
     return comm
 
 def filter_blue(img, lower, upper):
@@ -373,7 +375,7 @@ def filter_blue(img, lower, upper):
 
 def center_cb(img, lower, upper):
 
-    cnt = detect_clueboard(img, lower, upper, 1600)[1]
+    cnt = detect_clueboard(img, lower, upper, 3000)[1]
 
     if cnt is not None:
 

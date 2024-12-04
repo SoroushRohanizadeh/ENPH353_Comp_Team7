@@ -17,7 +17,7 @@ MIN_LETTER_WIDTH = 35
 LETTER_BORDER_THICKNESS = 3
 
 FIZZ_ICON_PATH = "clue_board/reference_images/fizz_detective.png"
-NUM_MATCHES_FOR_HOMOGRAPHY = 8
+NUM_MATCHES_FOR_HOMOGRAPHY = 10
 
 LETTER_IMG_PATH = "clue_board/reference_images/"
 LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
