@@ -56,9 +56,6 @@ class ClueBoard:
         for letter in bottom:
             bottom_chars.append(self.imgToChar(letter))
 
-        # reference = cv2.imread(LETTER_IMG_PATH + "I.png", cv2.IMREAD_GRAYSCALE)
-        # _, reference = cv2.threshold(reference, LETTER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
-        # print(self.imgDifference(top[0], reference))
         top_msg = ''.join(top_chars)
         bottom_msg = ''.join(bottom_chars)
         print('Top: ' + ''.join(top_chars) + " Bottom: " + ''.join(bottom_chars))
@@ -156,6 +153,10 @@ class ClueBoard:
         @return True if board is found
         @return the transformed image
         '''
+        # lower_blue = (150, 0, 0)
+        # upper_blue = (255, 100, 100)
+        # binarized = cv2.inRange(img, lower_blue, upper_blue)
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         ret, binarized = cv2.threshold(gray, BORDER_COLOR_THRESHOLD,255,cv2.THRESH_BINARY)
 
