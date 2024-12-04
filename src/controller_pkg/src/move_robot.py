@@ -18,7 +18,7 @@ class ControlNode:
 
     def __init__(self):
         rospy.init_node('move_robot', anonymous=True)
-        rospy.rate = 100
+        rospy.rate = 500
         self.bridge = CvBridge()
         self.moveCommand = Twist()
         self.string = String()
@@ -53,10 +53,10 @@ class ControlNode:
             self.rate.sleep()
 
     def cameraCallback(self, img):
-        # x, yaw = lf.line_follow(self, img)
-        x, yaw = lf.line_follow_leaves(self,img)
+        x, yaw = lf.line_follow(self, img)
+        # x, yaw = lf.line_follow_leaves(self,img)
         x,yaw = lf.acc_comms(x,yaw)
-        # x,yaw = (0,0)
+        x,yaw = (0,0)
         self.setMotion(x, yaw)
 
         if DEBUG:
