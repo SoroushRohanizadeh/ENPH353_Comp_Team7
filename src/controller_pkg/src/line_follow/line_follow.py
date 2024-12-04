@@ -4,27 +4,20 @@ import rospy
 import math
 from collections import deque
 
-trip = False
 passed_crosswalk = False
 
-def line_follow(self, img):
+def line_follow(self, img, lower, upper):
 
-    global trip
     global passed_crosswalk
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
 
-    detect_clueboard(image)
+    # if detect_clueboard(image, lower, upper, 1600)[0]:
+    #     self.curr_state = "CB_2"
 
-    if not passed_crosswalk and (detect_crosswalk(image) or trip):
-        trip = True
-        command = task_save_andy(self,image)
-        if trip:
-            return command
-        else:
-            # rospy.sleep(1)
-            passed_crosswalk = True
-            return command
+    if (not passed_crosswalk) and detect_crosswalk(image):
+        self.curr_state = "ANDY_WAIT"
+        return 0,0
 
     filtered = line_img_filter(image)
 
@@ -59,7 +52,7 @@ def get_target_coord(img):
     
     col_list = []
     for col in range(img.shape[1]):
-        if 255 not in img[400:700,col]:
+        if 255 not in img[400:,col]:
             col_list.append(col)
 
     if not col_list:
@@ -81,8 +74,8 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.002 #0.0015
-Kp_angular = 1.75
+Kp_linear = 0.003 #0.002
+Kp_angular = 3.5 #2
 max_linear = 3.0  
 max_angular = 3.0 
 
@@ -102,7 +95,11 @@ def compute_twist(x_target, y_target):
 
 history = deque(maxlen=3)
 
-def acc_comms(x_vel, yaw): 
+def acc_comms(x_vel, yaw, reset=False): 
+
+    if reset:
+        history.clear()
+        return
 
     history.append((x_vel,yaw))
 
@@ -132,24 +129,42 @@ def detect_crosswalk(img):
 
     return False
 
+    # red_mask = cv.inRange(img, lower_red, upper_red)
+
+    # contours,_ = cv.findContours(red_mask, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+    # filtered_contours = contours[1:]
+    # result = False
+    # for contour in filtered_contours:
+    #     area = cv.contourArea(contour)
+    #     print(area)
+    #     if area > 2500 and area < 600000:
+    #         cv.drawContours(img, [contour], -1, 255, -1)
+    #         result = True
+
+    # cv.imshow("img",img)
+    # cv.waitKey(1)
+    # return result
+
+
 fgbg = cv.createBackgroundSubtractorMOG2()
 last_10 = deque(maxlen=10)
 floor_it = False
 last_x = -2
 
-def task_save_andy(self, img):
+def save_andy(self, img):
 
     global floor_it
-    global trip
     global last_x
+    global passed_crosswalk
 
-    command = center_road(img, lower_red, upper_red)
+    image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
+
+    command = center_road(image, lower_red, upper_red)
 
     if command != (0,0):
         return command
 
-    last_10.append(find_andy(img,fgbg))
-
+    last_10.append(find_andy(image,fgbg))
 
     if floor_it:
         if last_10[0][1] != -1:
@@ -158,9 +173,11 @@ def task_save_andy(self, img):
             if last_10[i][0] or last_x < 300:
                 return command
         
-        trip = False
         print("go")
-        return (50.0,0)
+        self.curr_state = "ANDY_GO"
+        acc_comms(0,0,reset=True)
+        passed_crosswalk = True
+        return (5.0,-1)
 
 
     for elem in last_10:
@@ -170,12 +187,31 @@ def task_save_andy(self, img):
     floor_it = True
     return command
 
+count = 0
+def go_andy(self, img):
+
+    global count
+    
+    if count == 0:
+        comm = (1.83,-0.5)
+    if count == 1:
+        comm = (0,2.0)
+    if count == 2:
+        comm = (1.75,0)
+    if count == 3:
+        comm = (0,-2.5)
+    if count == 4:
+        comm = (0,0)
+        self.curr_state = "CB_2"
+    count = count + 1
+    return comm
+
 def center_road(img, lower, upper):
 
     angle = get_angle(img, lower, upper)
     
     if abs(angle) > 2:
-        return 0, -0.1*angle
+        return 0, -0.5*angle
     
     else:
         return 0,0
@@ -225,10 +261,20 @@ def find_andy(img,fgbg):
         # cv.waitKey(1)   
     return False, -1
 
-def line_follow_leaves(self,img):
+passed_cb5 = False
+def line_follow_leaves(self,img, lower, upper):
+
+    global passed_cb5
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
 
+    # if detect_clueboard(image, lower, upper, 300)[0]:
+    #     self.curr_state = "CB_2"
+    if not passed_cb5 and detect_clueboard(image,lower,upper, 250)[0]:
+        self.curr_state = "CB_5"
+        passed_cb5 = True
+        print("CB_5")
+        return 0,0
     filtered = line_img_filter_leaves(image)
 
     x_target, y_target = get_target_coord(filtered)
@@ -245,9 +291,9 @@ def line_img_filter_leaves(img):
     gray[:400,:] = 0
     blurred = cv.GaussianBlur(gray, (15, 15), 0)
     
-    # kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
-    # cleaned = cv.morphologyEx(blurred, cv.MORPH_CLOSE, kernel)
-    # cleaned = cv.morphologyEx(cleaned, cv.MORPH_OPEN, kernel)
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+    cleaned = cv.morphologyEx(blurred, cv.MORPH_CLOSE, kernel)
+    cleaned = cv.morphologyEx(cleaned, cv.MORPH_OPEN, kernel)
     
     mask = cv.inRange(blurred, lower_leaf, upper_leaf)
 
@@ -265,18 +311,18 @@ def line_img_filter_leaves(img):
     return result
     
 
-lower_blue1 = np.array([80,0,0])
-upper_blue1 = np.array([120,20,20])
+# lower_blue1 = np.array([80,0,0])
+# upper_blue1 = np.array([120,20,20])
 
-lower_blue2 = np.array([190,90,90])
-upper_blue2 = np.array([210,110,110])
+# lower_blue2 = np.array([190,90,90])
+# upper_blue2 = np.array([210,110,110])
 
-lower_blue3 = np.array([110,10,10])
-upper_blue3 = np.array([130,30,30])
+# lower_blue3 = np.array([110,10,10])
+# upper_blue3 = np.array([130,30,30])
 
-def detect_clueboard(img):
+def detect_clueboard(img, lower, upper, max_area):
 
-    blue = filter_blue(img, lower_blue1, upper_blue1)
+    blue = filter_blue(img, lower, upper)
     gray = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
     ret, binarized = cv.threshold(gray,10,255,cv.THRESH_BINARY)
 
@@ -290,22 +336,54 @@ def detect_clueboard(img):
     contours, _ = cv.findContours(inverted, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
     filtered_contours = contours[1:]
     # cv.drawContours(gray, contours, -1, 255, 3)
-    
+    comm = False, None
     for contour in filtered_contours:
         area = cv.contourArea(contour)
-        if area > 1400:
-            print(area)
+        if area > max_area and area < 600000: 
+            # print(area)
             cv.drawContours(gray,[contour], -1, 255, 3)
-            return True
+            comm = True, contour
 
-    # print(seen)
-    # cv.imshow("boARD",gray)
-    # cv.waitKey(1)  
-    return False
+    
+    cv.imshow("boARD",gray)
+    cv.waitKey(1)  
+    return comm
 
 def filter_blue(img, lower, upper):
     blue = cv.inRange(img, lower, upper)
     return cv.bitwise_and(img, img, mask=blue)
+
+def center_cb(img, lower, upper):
+
+    cnt = detect_clueboard(img, lower, upper, 1600)[1]
+
+    if cnt is not None:
+
+        moments = cv.moments(cnt)
+
+        if moments["m00"] != 0:  
+            center_x = int(moments["m10"] / moments["m00"])
+            center_y = int(moments["m01"] / moments["m00"])
+
+        x,yaw = compute_twist(center_x, center_y)
+
+        return 0,yaw
+
+    return 0,0
+
+def scan_cb(self,img,lower,upper):
+
+    image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
+
+    if True:
+        comm = center_cb(image, lower, upper)
+        if abs(comm[1]) < 0.18:
+            return 0.5,0
+
+        return comm
+    
+    return 0,0
+
 
 def detect_stuck(img):
     return
