@@ -107,14 +107,10 @@ class ClueBoard:
 
         contours = sorted(contours, key = cv2.contourArea, reverse = True)
         contours = contours[2:] # remove the border contours
-
-        # filtering out any small artifacts:
         contours = [cnt for cnt in contours if cv2.boundingRect(cnt)[3] > MIN_LETTER_HEIGHT]
+        contours = self.filterInternalContours(contours)
 
-        #filtering out any internal contours in letters like Q, O, R, etc.
-        contours = [cnt for cnt in contours if cv2.boundingRect(cnt)[2] > MIN_LETTER_WIDTH]
         contours = sorted(contours, key = lambda contour: cv2.boundingRect(contour)[0]) #sort by x location
-
         top_letters = []
         bottom_letters = []
         for contour in contours:
@@ -133,6 +129,26 @@ class ClueBoard:
                 cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
         return top_letters, bottom_letters
+
+    def filterInternalContours(self, contours):
+        bounding_boxes = [cv2.boundingRect(cnt) for cnt in contours]
+
+        outer_contours = []
+        for i, box1 in enumerate(bounding_boxes):
+            x1, y1, w1, h1 = box1
+            inside = False
+            
+            for j, box2 in enumerate(bounding_boxes):
+                if i != j:
+                    x2, y2, w2, h2 = box2
+                    # Check if box1 is inside box2
+                    if x1 > x2 and y1 > y2 and (x1 + w1) < (x2 + w2) and (y1 + h1) < (y2 + h2):
+                        inside = True
+                        break
+            
+            if not inside:
+                outer_contours.append(contours[i])
+        return outer_contours
 
     def smoothLetter(self, letter):
         '''
