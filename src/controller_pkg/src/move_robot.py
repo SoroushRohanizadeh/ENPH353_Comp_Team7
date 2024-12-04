@@ -79,9 +79,16 @@ class ControlNode:
             img = self.cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
             self.debug.publish(self.bridge.cv2_to_imgmsg(img))
         else:
-            ret, num, msg = self.cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+            num = 2
+            ret, top, bot = self.cb.detectClueBoard(num, self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
             if (ret):
-                self.publishClue(num, msg)
+                self.publishClue(self.topToNum(top), bot)
+
+    def topToNum(top):
+        '''
+        map a message to the clue number
+        '''
+        return 2
 
     def publishClue(self, num, msg):
         self.score_tracker.publish("Team7,password," + num + "," + msg)

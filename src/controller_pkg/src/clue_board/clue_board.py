@@ -28,14 +28,15 @@ LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 
 class ClueBoard:
 
-    def __init__(self):
-        self.LIGHT_BOARD = False # 3, 6
-        self.MEDIUM_BOARD = False # 4
-        self.DARK_BOARD = True # 1, 2, 5, 7, 8
+    # def __init__(self):
+    #     self.LIGHT_BOARD = False # 3, 6
+    #     self.MEDIUM_BOARD = False # 4
+    #     self.DARK_BOARD = True # 1, 2, 5, 7, 8
 
-    def detectClueBoard(self, img):
+    def detectClueBoard(self, num, img):
+        self.setFlags(num)
         detected, transformed_img = self.detectBoard(img)
-        if not detected: return False, 0, str()
+        if not detected: return False, str(), str()
         return True, self.parseBoard(transformed_img)
     
     def setFlags(self, num):
@@ -59,7 +60,7 @@ class ClueBoard:
         detected, transformed_img = self.detectBoard(img)
         if not detected: return img
 
-        top, bottom = self.highlightLetters(transformed_img)
+        # top, bottom = self.highlightLetters(transformed_img)
         top_msg, bottom_msg = self.parseBoard(transformed_img)
         return transformed_img
         # return self.highlightLetters(transformed_img)
