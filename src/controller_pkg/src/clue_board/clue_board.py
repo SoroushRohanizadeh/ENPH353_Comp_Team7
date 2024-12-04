@@ -60,8 +60,8 @@ class ClueBoard:
         if not detected: return img
 
         top, bottom = self.highlightLetters(transformed_img)
-        # top_msg, bottom_msg = self.parseBoard(transformed_img)
-        return bottom[4]
+        top_msg, bottom_msg = self.parseBoard(transformed_img)
+        return transformed_img
         # return self.highlightLetters(transformed_img)
     
     def parseBoard(self, img):
@@ -113,9 +113,35 @@ class ClueBoard:
         guess = LETTERS[diffs.index(min(diffs))]
         if guess == "G" or guess == "C":
             return self.cOrG(letter)
-        if guess == 'E' or 'F':
+        if guess == 'E' or guess == 'F':
             return self.eOrF(letter)
+        if guess == 'I' or guess == 'I':
+            return self.iOrOne(letter)
         return guess
+
+    def iOrOne(self, letter):
+        
+        cropped = self.topHalf(letter)
+
+        i = cv2.imread(LETTER_IMG_PATH + "I.png", cv2.IMREAD_GRAYSCALE)
+        i = self.topHalf(i)
+
+        one = cv2.imread(LETTER_IMG_PATH + "1.png", cv2.IMREAD_GRAYSCALE)
+        one = self.topHalf(one)
+
+        i_diff = self.imgDifference(i, cropped)
+        one_diff = self.imgDifference(one, cropped)
+
+        if (i_diff > one_diff):
+            return "1"
+        else:
+            return "I"
+
+    def topHalf(self, letter):
+        height, width = letter.shape[:2]
+
+        crop_height = height // 2
+        return letter[0:height - crop_height, :]
 
     def eOrF(self, letter):
         
@@ -228,7 +254,6 @@ class ClueBoard:
                 cv2.rectangle(img, (x, y), (x + w, y + h), 175, 2)
 
         return top_letters, bottom_letters
-
 
     def filterInternalContours(self, contours):
         bounding_boxes = [cv2.boundingRect(cnt) for cnt in contours]
