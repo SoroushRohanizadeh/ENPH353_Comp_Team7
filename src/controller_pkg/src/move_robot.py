@@ -39,13 +39,13 @@ class ControlNode:
         self.cam = rospy.Subscriber('/B1/rrbot/camera1/image_raw', Image, self.cameraCallback)
         self.rate = rospy.Rate(1000)
 
-        self.lower_blue = lower_blue3
-        self.upper_blue = upper_blue3
+        self.lower_blue = lower_blue1
+        self.upper_blue = upper_blue1
 
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
 
-        self.curr_state = "TP_2"
+        self.curr_state = "LF"
 
         self.states = {
 
@@ -149,18 +149,66 @@ class ControlNode:
     def cb_1_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(1,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.setMotion(0,-1)
+            rospy.sleep(1)
+            self.curr_state = "LF"
+        else: #only because cb broken
+            self.curr_state="LF"
 
     def cb_2_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(2,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.setMotion(0,1)
+            rospy.sleep(1)
+            self.curr_state = "LF"
+            self.lower_blue = lower_blue2
+            self.upper_blue = upper_blue2
+        else: #only because cb broken
+            self.setMotion(0,1.7)
+            rospy.sleep(1)
+            self.curr_state="LF"
+            self.lower_blue = lower_blue2
+            self.upper_blue = upper_blue2
 
     def cb_3_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(3,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.setMotion(0,0)
+            rospy.sleep(0.5)
+            print("TP_1")
+            self.curr_state = "TP_1"
+            self.lower_blue = lower_blue3
+            self.upper_blue = upper_blue3
+        else: #only because cb broken
+            self.setMotion(0,0)
+            # rospy.sleep(0.5)
+            print("TP_1")
+            self.curr_state="TP_1"
+            self.lower_blue = lower_blue3
+            self.upper_blue = upper_blue3
 
     def cb_4_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(4,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.setMotion(0,1)
+            rospy.sleep(1)
+            self.curr_state = "LF_DIRT"
+            self.lower_blue = lower_blue2
+            self.upper_blue = upper_blue2
+        else: #only because cb broken
+            self.setMotion(2,0)
+            rospy.sleep(1.0)
+            self.curr_state="LF_DIRT"
+            self.lower_blue = lower_blue2
+            self.upper_blue = upper_blue2
 
     def cb_5_state(self,img):
         self.setMotion(0,0)
@@ -169,7 +217,7 @@ class ControlNode:
         rospy.sleep(1.5)
         self.setMotion(0,0)
         rospy.sleep(1.0)
-        self.setMotion(1.0,-1.68)
+        self.setMotion(1.0,-1.73)
         rospy.sleep(2.8)
         self.setMotion(2.0,0)
         rospy.sleep(3.0)
@@ -178,6 +226,21 @@ class ControlNode:
     def cb_6_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.setMotion(0,0)
+            rospy.sleep(0.5)
+            print("TP_2")
+            self.curr_state = "TP_2"
+            self.lower_blue = lower_blue1
+            self.upper_blue = upper_blue1
+        else: #only because cb broken
+            self.setMotion(0,0)
+            rospy.sleep(0.5)
+            print("TP_2")
+            self.curr_state="TP_2"
+            self.lower_blue = lower_blue1
+            self.upper_blue = upper_blue1
 
     def cb_7_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
@@ -194,7 +257,10 @@ class ControlNode:
         rospy.sleep(1.6)
         self.setMotion(0,0)
         rospy.sleep(2.0)
-        self.curr_state = "LF_DIRT"
+        self.lower_blue = lower_blue3
+        self.upper_blue = upper_blue3
+        print("CB_4")
+        self.curr_state = "CB_4"
 
     def tp_2_state(self,img):
 
@@ -206,7 +272,9 @@ class ControlNode:
         rospy.sleep(1.0)
         self.setMotion(0,0)
         rospy.sleep(2.0)
+        print("CB_7")
         self.curr_state = "CB_7"
+
 if __name__ == '__main__':
     try:
         node = ControlNode()

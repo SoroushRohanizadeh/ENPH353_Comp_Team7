@@ -5,19 +5,28 @@ import math
 from collections import deque
 
 passed_crosswalk = False
+cb_1_done = False
 
 def line_follow(self, img, lower, upper):
 
     global passed_crosswalk
+    global cb_1_done
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
 
-    # if detect_clueboard(image, lower, upper, 1600)[0]:
-    #     self.curr_state = "CB_2"
+    if not cb_1_done and detect_clueboard(image, lower, upper, 2000)[0]:
+        cb_1_done = True
+        print("CB_1")
+        self.curr_state = "CB_1"
 
-    if (not passed_crosswalk) and detect_crosswalk(image):
+    if not passed_crosswalk and detect_crosswalk(image):
+        print("ANDY_WAIT")
         self.curr_state = "ANDY_WAIT"
         return 0,0
+
+    if passed_crosswalk and detect_clueboard(image, lower, upper, 4000)[0]:
+        print("CB_3")
+        self.curr_state = "CB_3"
 
     filtered = line_img_filter(image)
 
@@ -173,7 +182,7 @@ def save_andy(self, img):
             if last_10[i][0] or last_x < 300:
                 return command
         
-        print("go")
+        print("ANDY_GO")
         self.curr_state = "ANDY_GO"
         acc_comms(0,0,reset=True)
         passed_crosswalk = True
@@ -202,6 +211,7 @@ def go_andy(self, img):
         comm = (0,-2.5)
     if count == 4:
         comm = (0,0)
+        print("CB_2")
         self.curr_state = "CB_2"
     count = count + 1
     return comm
@@ -234,12 +244,12 @@ def get_angle(img, lower, upper):
                     angle = math.atan2(y2 - y1, x2 - x1) * (180 / np.pi)
                     angles.append(angle)
 
-        for line in lines:
-            for x1, y1, x2, y2 in line:
-                if abs(x1-x2) > 30:
-                    cv.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-    cv.imshow("Detected Lines", img)
-    cv.waitKey(1)
+    #     for line in lines:
+    #         for x1, y1, x2, y2 in line:
+    #             if abs(x1-x2) > 30:
+    #                 cv.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # cv.imshow("Detected Lines", img)
+    # cv.waitKey(1)
 
     return np.mean(angles) if angles else 0
 
@@ -253,9 +263,9 @@ def find_andy(img,fgbg):
         if cv.contourArea(contour) > 1600: 
             x, y, w, h = cv.boundingRect(contour)
             if y > 250 and y < 400:
-                cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                cv.imshow('Motion Detection', img)
-                cv.waitKey(1)
+                # cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                # cv.imshow('Motion Detection', img)
+                # cv.waitKey(1)
                 return True, x
         # cv.imshow('Motion Detection', img)
         # cv.waitKey(1)   
@@ -268,8 +278,6 @@ def line_follow_leaves(self,img, lower, upper):
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
 
-    # if detect_clueboard(image, lower, upper, 300)[0]:
-    #     self.curr_state = "CB_2"
     if not passed_cb5 and detect_clueboard(image,lower,upper, 300)[0]:
         self.curr_state = "CB_5"
         passed_cb5 = True
@@ -277,6 +285,7 @@ def line_follow_leaves(self,img, lower, upper):
         return 0,0
 
     if passed_cb5 and detect_clueboard(image, lower, upper, 3000)[0]:
+        print("CB_6")
         self.curr_state = "CB_6"
         return 0,0
 
@@ -311,8 +320,8 @@ def line_img_filter_leaves(img):
 
     result = cv.bitwise_and(img, img, mask=filtered_mask)
     result[filtered_mask>0] = 255
-    cv.imshow("Detected Line", result)
-    cv.waitKey(1)
+    # cv.imshow("Detected Line", result)
+    # cv.waitKey(1)
     return result
     
 
@@ -372,7 +381,7 @@ def center_cb(img, lower, upper):
 
         x,yaw = compute_twist(center_x, center_y)
 
-        return 0,yaw
+        return 0,2*yaw
 
     return 0,0
 
@@ -380,14 +389,14 @@ def scan_cb(self,img,lower,upper):
 
     image = self.bridge.imgmsg_to_cv2(img, desired_encoding="bgr8")
 
-    if True:
-        comm = center_cb(image, lower, upper)
-        if abs(comm[1]) < 0.18:
-            return 0.5,0
-
-        return comm
     
-    return 0,0
+    comm = center_cb(image, lower, upper)
+    if abs(comm[1]) < 0.18:
+        return 0.5,0
+
+    return comm
+    
+    
 
 
 def detect_stuck(img):
