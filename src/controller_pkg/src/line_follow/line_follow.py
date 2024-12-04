@@ -59,7 +59,7 @@ def get_target_coord(img):
     
     col_list = []
     for col in range(img.shape[1]):
-        if 255 not in img[400:,col]:
+        if 255 not in img[400:700,col]:
             col_list.append(col)
 
     if not col_list:
@@ -81,7 +81,7 @@ def get_target_coord(img):
 
     return x_target,y_target  
 
-Kp_linear = 0.001 #0.002
+Kp_linear = 0.002 #0.0015
 Kp_angular = 1.75
 max_linear = 3.0  
 max_angular = 3.0 
@@ -243,7 +243,7 @@ def line_img_filter_leaves(img):
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     gray[:400,:] = 0
-    blurred = cv.GaussianBlur(gray, (11, 11), 0)
+    blurred = cv.GaussianBlur(gray, (15, 15), 0)
     
     # kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
     # cleaned = cv.morphologyEx(blurred, cv.MORPH_CLOSE, kernel)
@@ -265,30 +265,47 @@ def line_img_filter_leaves(img):
     return result
     
 
-lower_blue = np.array([80,0,0])
-upper_blue = np.array([120,20,20])
+lower_blue1 = np.array([80,0,0])
+upper_blue1 = np.array([120,20,20])
+
+lower_blue2 = np.array([190,90,90])
+upper_blue2 = np.array([210,110,110])
+
+lower_blue3 = np.array([110,10,10])
+upper_blue3 = np.array([130,30,30])
 
 def detect_clueboard(img):
 
-    blue_mask =cv.inRange(img, lower_blue, upper_blue)
+    blue = filter_blue(img, lower_blue1, upper_blue1)
+    gray = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
+    ret, binarized = cv.threshold(gray,10,255,cv.THRESH_BINARY)
 
-    edges = cv.Canny(blue_mask,50,150)
-    lines = cv.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=50, maxLineGap=10)
+    erosionKernel = np.ones((3,3))
+    eroded = cv.erode(binarized, erosionKernel, iterations = 1)
 
-    if lines is not None:
-        # for line in lines:
-        #     for x1, y1, x2, y2 in line:
-        #         cv.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        # cv.imshow("Detected Lines", img)
-        # cv.waitKey(1)
+    dilationKernel = np.ones((4,4))
+    dilated = cv.dilate(eroded, dilationKernel, iterations = 3)
+    
+    inverted = cv.bitwise_not(dilated)
+    contours, _ = cv.findContours(inverted, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+    filtered_contours = contours[1:]
+    # cv.drawContours(gray, contours, -1, 255, 3)
+    
+    for contour in filtered_contours:
+        area = cv.contourArea(contour)
+        if area > 1400:
+            print(area)
+            cv.drawContours(gray,[contour], -1, 255, 3)
+            return True
 
-        for line in lines:
-            for x1, y1, x2, y2 in line:
-                sq_length = (x1-x2)**2+(y1-y2)**2
-                if sq_length > 3000:
-                    return True 
-            
+    # print(seen)
+    # cv.imshow("boARD",gray)
+    # cv.waitKey(1)  
     return False
+
+def filter_blue(img, lower, upper):
+    blue = cv.inRange(img, lower, upper)
+    return cv.bitwise_and(img, img, mask=blue)
 
 def detect_stuck(img):
     return
