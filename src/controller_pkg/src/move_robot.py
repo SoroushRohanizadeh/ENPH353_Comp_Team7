@@ -12,7 +12,9 @@ from clue_board.clue_board import ClueBoard
 import line_follow.line_follow as lf
 import cv2
 import numpy as np
+from collections import deque
 
+MAX_LEN = 5
 DEBUG = True
 
 lower_blue1 = np.array([80,0,0])
@@ -41,6 +43,8 @@ class ControlNode:
 
         self.lower_blue = lower_blue1
         self.upper_blue = upper_blue1
+
+        self.current_messages = deque(maxlen=MAX_LEN)
 
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
@@ -79,7 +83,7 @@ class ControlNode:
         
         self.states[self.curr_state](img)
         self.updateBoardNumber()
-        print("Looking for: ", self.current_board_num)
+        # print("Looking for: ", self.current_board_num)
 
         # if DEBUG:
         #     img = self.cb.detectClueBoard_Debug(self.current_board_num, self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
@@ -106,7 +110,8 @@ class ControlNode:
             self.current_board_num = 7
 
     def publishClue(self, num, msg):
-        self.score_tracker.publish("Team7,password," + num + "," + msg)
+        self.score_tracker.publish("Team7,password," + str(num) + ","+ msg)
+        print("Team7,password," + str(num) + ","+ msg)
 
     def startTimer(self):
         self.score_tracker.publish("Team7,password,0,NA")
@@ -171,10 +176,14 @@ class ControlNode:
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(1,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
-            self.setMotion(0,-1)
-            rospy.sleep(1)
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
+            self.setMotion(-0.5,-1)
+            rospy.sleep(1.3)
             self.curr_state = "LF"
             self.publishClue(1, result)
+            self.current_messages.clear()
         # else: #only because cb broken
         #     self.curr_state="LF"
 
@@ -183,12 +192,20 @@ class ControlNode:
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(2,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
-            self.setMotion(0,1)
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
+            self.setMotion(-0.3,1.6)
+            rospy.sleep(1)
+            self.setMotion(2,0)
+            rospy.sleep(1)
+            self.setMotion(0,-2)
             rospy.sleep(1)
             self.curr_state = "LF"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
             self.publishClue(2, result)
+            self.current_messages.clear()
         # else: #only because cb broken
         #     self.setMotion(0,1.7)
         #     rospy.sleep(1)
@@ -201,6 +218,10 @@ class ControlNode:
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(3,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
+            print("yay")
             self.setMotion(0,0)
             rospy.sleep(0.5)
             print("TP_1")
@@ -208,6 +229,7 @@ class ControlNode:
             self.lower_blue = lower_blue3
             self.upper_blue = upper_blue3
             self.publishClue(3, result)
+            self.current_messages.clear()
         # else: #only because cb broken
         #     self.setMotion(0,0)
         #     # rospy.sleep(0.5)
@@ -221,12 +243,16 @@ class ControlNode:
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(4,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
-            self.setMotion(0,1)
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
+            self.setMotion(0,1.5)
             rospy.sleep(1)
             self.curr_state = "LF_DIRT"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
             self.publishClue(4, result)
+            self.current_messages.clear()
         # else: #only because cb broken
         #     self.setMotion(2,0)
         #     rospy.sleep(1.0)
@@ -235,23 +261,34 @@ class ControlNode:
         #     self.upper_blue = upper_blue2
 
     def cb_5_state(self,img):
-        self.setMotion(0,0)
-        rospy.sleep(0.5)
-        self.setMotion(0,2.0)
-        rospy.sleep(1.5)
-        self.setMotion(0,0)
-        rospy.sleep(1.0)
-        self.setMotion(1.0,-1.73)
-        rospy.sleep(2.8)
-        self.setMotion(2.0,0)
-        rospy.sleep(3.0)
-        self.curr_state = "LF_DIRT"
+        self.lower_blue = lower_blue1
+        self.upper_blue = upper_blue1
+        x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(5,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
+            rospy.sleep(1.0)
+            self.setMotion(1.0,-1.73)
+            rospy.sleep(2.8)
+            self.setMotion(2.0,0)
+            rospy.sleep(3.0)
+            self.curr_state = "LF_DIRT"
+            self.lower_blue = lower_blue2
+            self.upper_blue = upper_blue2
+            self.publishClue(4, result)
+            self.current_messages.clear()
     
     def cb_6_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
             self.setMotion(0,0)
             rospy.sleep(0.5)
             print("TP_2")
@@ -259,6 +296,7 @@ class ControlNode:
             self.lower_blue = lower_blue1
             self.upper_blue = upper_blue1
             self.publishClue(6, result)
+            self.current_messages.clear()
         # else: #only because cb broken
         #     self.setMotion(0,0)
         #     rospy.sleep(0.5)
@@ -272,7 +310,11 @@ class ControlNode:
         self.setMotion(x,yaw)
         yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         if yay:
+            self.current_messages.append(result)
+        
+        if self.reliableMsg():
             self.publishClue(7, result)
+            self.current_messages.clear()
             self.stopTimer()
 
     def tp_1_state(self,img):
@@ -284,8 +326,7 @@ class ControlNode:
         rospy.sleep(1)
         self.setMotion(-2,0)
         rospy.sleep(1.6)
-        self.setMotion(0,0)
-        rospy.sleep(2.0)
+        self.setMotion(0,-1)
         self.lower_blue = lower_blue3
         self.upper_blue = upper_blue3
         print("CB_4")
@@ -303,6 +344,13 @@ class ControlNode:
         rospy.sleep(2.0)
         print("CB_7")
         self.curr_state = "CB_7"
+
+    def reliableMsg(self):
+        if len(self.current_messages) < MAX_LEN: return False
+        for i in range(MAX_LEN-2):
+            if self.current_messages[i] != self.current_messages[i+1]:
+                return False
+        return True
 
 if __name__ == '__main__':
     try:

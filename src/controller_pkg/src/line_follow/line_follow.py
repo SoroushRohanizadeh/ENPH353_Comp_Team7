@@ -280,6 +280,10 @@ def line_follow_leaves(self,img, lower, upper):
 
     if not passed_cb5 and detect_clueboard(image,lower,upper, 300)[0]:
         self.curr_state = "CB_5"
+        self.setMotion(0,0)
+        rospy.sleep(0.5)
+        self.setMotion(0,2.0)
+        rospy.sleep(1.5)
         passed_cb5 = True
         print("CB_5")
         return 0,0
