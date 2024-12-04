@@ -39,13 +39,13 @@ class ControlNode:
         self.cam = rospy.Subscriber('/B1/rrbot/camera1/image_raw', Image, self.cameraCallback)
         self.rate = rospy.Rate(1000)
 
-        self.lower_blue = lower_blue2
-        self.upper_blue = upper_blue2
+        self.lower_blue = lower_blue3
+        self.upper_blue = upper_blue3
 
         if DEBUG:
             self.debug = rospy.Publisher('/image_debug', Image, queue_size = 1)
 
-        self.curr_state = "TP_1"
+        self.curr_state = "TP_2"
 
         self.states = {
 
@@ -54,12 +54,14 @@ class ControlNode:
             "ANDY_WAIT": self.save_andy_state,
             "ANDY_GO": self.go_andy_state,
             "TP_1": self.tp_1_state,
-            # "TP_2": self.tp_2_state,
+            "TP_2": self.tp_2_state,
             "CB_1": self.cb_1_state,
             "CB_2": self.cb_2_state,
             "CB_3": self.cb_3_state,
             "CB_4": self.cb_4_state,
             "CB_5": self.cb_5_state,
+            "CB_6": self.cb_6_state,
+            "CB_7": self.cb_7_state,
         }
 
     def run(self):
@@ -75,20 +77,13 @@ class ControlNode:
         
         self.states[self.curr_state](img)
 
-        if DEBUG:
-            img = self.cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
-            self.debug.publish(self.bridge.cv2_to_imgmsg(img))
-        else:
-            num = 2
-            ret, top, bot = self.cb.detectClueBoard(num, self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
-            if (ret):
-                self.publishClue(self.topToNum(top), bot)
-
-    def topToNum(top):
-        '''
-        map a message to the clue number
-        '''
-        return 2
+        # if DEBUG:
+        #     img = self.cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        #     self.debug.publish(self.bridge.cv2_to_imgmsg(img))
+        # else:
+        #     ret, num, msg = self.cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        #     if (ret):
+        #         self.publishClue(num, msg)
 
     def publishClue(self, num, msg):
         self.score_tracker.publish("Team7,password," + num + "," + msg)
@@ -171,14 +166,23 @@ class ControlNode:
         self.setMotion(0,0)
         rospy.sleep(0.5)
         self.setMotion(0,2.0)
-        rospy.sleep(1.0)
+        rospy.sleep(1.5)
         self.setMotion(0,0)
         rospy.sleep(1.0)
-        self.setMotion(1.0,-1.0)
-        rospy.sleep(2.3)
-        self.setMotion(0,0)
-        rospy.sleep(5.0)
+        self.setMotion(1.0,-1.68)
+        rospy.sleep(2.8)
+        self.setMotion(2.0,0)
+        rospy.sleep(3.0)
         self.curr_state = "LF_DIRT"
+    
+    def cb_6_state(self,img):
+        x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        self.setMotion(x,yaw)
+
+    def cb_7_state(self,img):
+        x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
+        self.setMotion(x,yaw)
+
     def tp_1_state(self,img):
 
         self.setMotion(0,0)
@@ -191,6 +195,18 @@ class ControlNode:
         self.setMotion(0,0)
         rospy.sleep(2.0)
         self.curr_state = "LF_DIRT"
+
+    def tp_2_state(self,img):
+
+        self.setMotion(0,0)
+        position_2 = [-4, -2.3, 0.1, np.pi/2, 0, np.pi, np.pi*20]
+        self.respawn(position_2)
+        rospy.sleep(1)
+        self.setMotion(-0.3,2.0)
+        rospy.sleep(1.0)
+        self.setMotion(0,0)
+        rospy.sleep(2.0)
+        self.curr_state = "CB_7"
 if __name__ == '__main__':
     try:
         node = ControlNode()

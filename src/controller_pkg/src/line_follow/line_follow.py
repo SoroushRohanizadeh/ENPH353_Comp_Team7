@@ -270,11 +270,16 @@ def line_follow_leaves(self,img, lower, upper):
 
     # if detect_clueboard(image, lower, upper, 300)[0]:
     #     self.curr_state = "CB_2"
-    if not passed_cb5 and detect_clueboard(image,lower,upper, 250)[0]:
+    if not passed_cb5 and detect_clueboard(image,lower,upper, 300)[0]:
         self.curr_state = "CB_5"
         passed_cb5 = True
         print("CB_5")
         return 0,0
+
+    if passed_cb5 and detect_clueboard(image, lower, upper, 3000)[0]:
+        self.curr_state = "CB_6"
+        return 0,0
+
     filtered = line_img_filter_leaves(image)
 
     x_target, y_target = get_target_coord(filtered)
