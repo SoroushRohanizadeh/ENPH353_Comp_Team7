@@ -37,10 +37,11 @@ class ClueBoard:
         self.setFlags(num)
         detected, transformed_img = self.detectBoard(img)
         if not detected: return False, str(), str()
-        return True, self.parseBoard(transformed_img)
+        top, bot = self.parseBoard(transformed_img)
+        return True, top, bot
     
     def setFlags(self, num):
-        if (num == 3 or 6):
+        if (num == 3 or num == 6):
             self.LIGHT_BOARD = True
             self.MEDIUM_BOARD = False
             self.DARK_BOARD = False
@@ -48,16 +49,19 @@ class ClueBoard:
             self.LIGHT_BOARD = False
             self.MEDIUM_BOARD = True
             self.DARK_BOARD = False
-        elif num == 1 or 2 or 5 or 7 or 8:
+        # elif num == 1 or 2 or 5 or 7 or 8:
+        else:
             self.LIGHT_BOARD = False
             self.MEDIUM_BOARD = False
             self.DARK_BOARD = True
 
-    def detectClueBoard_Debug(self, img):
+    def detectClueBoard_Debug(self, num, img):
         '''
         used only during development
         '''
+        self.setFlags(num)
         detected, transformed_img = self.detectBoard(img)
+        # return transformed_img
         if not detected: return img
 
         # top, bottom = self.highlightLetters(transformed_img)
@@ -311,7 +315,6 @@ class ClueBoard:
             lower_blue = (110, 10, 10)
             upper_blue = (130, 30, 30)
             binarized = cv2.bitwise_not(cv2.inRange(img, lower_blue, upper_blue))
-
         erosionKernel = np.ones((3,3))
         eroded = cv2.erode(binarized, erosionKernel, iterations = 1)
 
@@ -342,7 +345,7 @@ class ClueBoard:
                 matrix = cv2.getPerspectiveTransform(contour_corners, image_corners)
                 ret_img = cv2.warpPerspective(gray, matrix, (TRANSFORMED_CB_WIDTH, TRANSFORMED_CB_HEIGHT))
 
-        if (ret_img.all() == img.all()): return False, img
+        if (ret_img.all() == img.all()): return False, ret_img
         return self.containsIcon(ret_img), ret_img
 
     def containsIcon(self, img):

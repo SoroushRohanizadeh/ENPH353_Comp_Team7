@@ -63,11 +63,13 @@ class ControlNode:
             "CB_6": self.cb_6_state,
             "CB_7": self.cb_7_state,
         }
+        self.current_board_num = 1
 
     def run(self):
 
-        while not rospy.Time.now().to_sec() > 0:
-            rospy.sleep(0.1)
+        self.startTimer()
+        # while not rospy.Time.now().to_sec() > 0:
+        #     rospy.sleep(0.1)
 
         while not rospy.is_shutdown():
             self.cmd_vel.publish(self.moveCommand) # should only be called here
@@ -76,14 +78,32 @@ class ControlNode:
     def cameraCallback(self, img):
         
         self.states[self.curr_state](img)
+        self.updateBoardNumber()
+        print("Looking for: ", self.current_board_num)
 
         # if DEBUG:
-        #     img = self.cb.detectClueBoard_Debug(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        #     img = self.cb.detectClueBoard_Debug(self.current_board_num, self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         #     self.debug.publish(self.bridge.cv2_to_imgmsg(img))
         # else:
-        #     ret, num, msg = self.cb.detectClueBoard(self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        #     ret, _, msg = self.cb.detectClueBoard(self.current_board_num, self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
         #     if (ret):
-        #         self.publishClue(num, msg)
+        #         self.publishClue(self.current_board_num, msg)
+
+    def updateBoardNumber(self):
+        if self.curr_state == "CB_1":
+            self.current_board_num = 1
+        elif self.curr_state == "CB_2":
+            self.current_board_num = 2
+        elif self.curr_state == "CB_3":
+            self.current_board_num = 3
+        elif self.curr_state == "TP_1" or self.curr_state == "CB_4":
+            self.current_board_num = 4
+        elif self.curr_state == "CB_5":
+            self.current_board_num = 5
+        elif self.curr_state == "CB_6":
+            self.current_board_num = 6
+        elif self.curr_state == "CB_7" or self.curr_state == "TP_2":
+            self.current_board_num = 7
 
     def publishClue(self, num, msg):
         self.score_tracker.publish("Team7,password," + num + "," + msg)
@@ -154,8 +174,9 @@ class ControlNode:
             self.setMotion(0,-1)
             rospy.sleep(1)
             self.curr_state = "LF"
-        else: #only because cb broken
-            self.curr_state="LF"
+            self.publishClue(1, result)
+        # else: #only because cb broken
+        #     self.curr_state="LF"
 
     def cb_2_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
@@ -167,12 +188,13 @@ class ControlNode:
             self.curr_state = "LF"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
-        else: #only because cb broken
-            self.setMotion(0,1.7)
-            rospy.sleep(1)
-            self.curr_state="LF"
-            self.lower_blue = lower_blue2
-            self.upper_blue = upper_blue2
+            self.publishClue(2, result)
+        # else: #only because cb broken
+        #     self.setMotion(0,1.7)
+        #     rospy.sleep(1)
+        #     self.curr_state="LF"
+        #     self.lower_blue = lower_blue2
+        #     self.upper_blue = upper_blue2
 
     def cb_3_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
@@ -185,13 +207,14 @@ class ControlNode:
             self.curr_state = "TP_1"
             self.lower_blue = lower_blue3
             self.upper_blue = upper_blue3
-        else: #only because cb broken
-            self.setMotion(0,0)
-            # rospy.sleep(0.5)
-            print("TP_1")
-            self.curr_state="TP_1"
-            self.lower_blue = lower_blue3
-            self.upper_blue = upper_blue3
+            self.publishClue(3, result)
+        # else: #only because cb broken
+        #     self.setMotion(0,0)
+        #     # rospy.sleep(0.5)
+        #     print("TP_1")
+        #     self.curr_state="TP_1"
+        #     self.lower_blue = lower_blue3
+        #     self.upper_blue = upper_blue3
 
     def cb_4_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
@@ -203,12 +226,13 @@ class ControlNode:
             self.curr_state = "LF_DIRT"
             self.lower_blue = lower_blue2
             self.upper_blue = upper_blue2
-        else: #only because cb broken
-            self.setMotion(2,0)
-            rospy.sleep(1.0)
-            self.curr_state="LF_DIRT"
-            self.lower_blue = lower_blue2
-            self.upper_blue = upper_blue2
+            self.publishClue(4, result)
+        # else: #only because cb broken
+        #     self.setMotion(2,0)
+        #     rospy.sleep(1.0)
+        #     self.curr_state="LF_DIRT"
+        #     self.lower_blue = lower_blue2
+        #     self.upper_blue = upper_blue2
 
     def cb_5_state(self,img):
         self.setMotion(0,0)
@@ -234,17 +258,22 @@ class ControlNode:
             self.curr_state = "TP_2"
             self.lower_blue = lower_blue1
             self.upper_blue = upper_blue1
-        else: #only because cb broken
-            self.setMotion(0,0)
-            rospy.sleep(0.5)
-            print("TP_2")
-            self.curr_state="TP_2"
-            self.lower_blue = lower_blue1
-            self.upper_blue = upper_blue1
+            self.publishClue(6, result)
+        # else: #only because cb broken
+        #     self.setMotion(0,0)
+        #     rospy.sleep(0.5)
+        #     print("TP_2")
+        #     self.curr_state="TP_2"
+        #     self.lower_blue = lower_blue1
+        #     self.upper_blue = upper_blue1
 
     def cb_7_state(self,img):
         x,yaw = lf.scan_cb(self,img, self.lower_blue, self.upper_blue)
         self.setMotion(x,yaw)
+        yay, extra, result = self.cb.detectClueBoard(6,self.bridge.imgmsg_to_cv2(img, desired_encoding='bgr8'))
+        if yay:
+            self.publishClue(7, result)
+            self.stopTimer()
 
     def tp_1_state(self,img):
 
